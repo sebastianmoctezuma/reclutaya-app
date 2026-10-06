@@ -1,0 +1,7 @@
+{
+  "SABOR": "prod",
+  "API_BASE": "https://app.reclutaya.com/api/movil/v1",
+  "SUPABASE_URL": "https://TU-PROYECTO.supabase.co",
+  "SUPABASE_ANON_KEY": "la llave anon (pública) del proyecto",
+  "SENTRY_DSN": ""
+}
