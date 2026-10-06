@@ -5,7 +5,7 @@ import 'package:reclutaya_app/nucleo/plataforma/plataforma.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 
 /// Esquinas continuas en iOS (como las de Apple), circulares en Android.
-ShapeBorder formaTarjeta(double r) => Plataforma.esIOS
+OutlinedBorder formaTarjeta(double r) => Plataforma.esIOS
     ? ContinuousRectangleBorder(borderRadius: BorderRadius.circular(r * 2.2))
     : RoundedRectangleBorder(borderRadius: BorderRadius.circular(r));
 

@@ -98,7 +98,9 @@ const rankingEjemplo = Ranking(
       apellidoOculto: true,
       zona: 'Centro',
       score: 87,
-      resumen: 'Buena actitud, vive cerca.',
+      resumen: 'Buena actitud · Vive cerca',
+      razones: ['Buena actitud', 'Vive cerca'],
+      fase: 'sin_iniciar',
       minutosTraslado: 20,
       requisitosIncumplidos: 1,
       requisitosTotal: 4,
@@ -116,6 +118,8 @@ const rankingEjemplo = Ranking(
       videoRecibido: true,
       testEstado: 'RESPONDIDA',
       testScore: 74,
+      documentoSolicitado: true,
+      fase: 'en_proceso',
     ),
     FilaRanking(
       postulacionId: 'p3',
@@ -126,6 +130,7 @@ const rankingEjemplo = Ranking(
       contactado: true,
       contratado: true,
       requisitosTotal: 4,
+      fase: 'contratado',
     ),
   ],
   bloqueados: [Bloqueado(postulacionId: 'p12', ranking: 12, score: 41)],
@@ -298,6 +303,10 @@ const sucursalesMulti = Sucursales(
       colorIdx: 0,
       principal: true,
       vacantesActivas: 1,
+      direccion: 'Privada Ninguno 447, Reynosa',
+      activas: 1,
+      contactosUsados: 285,
+      miembros: [Persona(nombre: 'Sofía Treviño', iniciales: 'ST')],
       vacantes: [
         VacanteDeSucursal(
           slug: 'cocinero',
@@ -312,6 +321,10 @@ const sucursalesMulti = Sucursales(
       nombre: 'Altomar',
       colorIdx: 2,
       vacantesActivas: 1,
+      direccion: 'Paseo Colinas del Pedregal 134, Reynosa',
+      activas: 1,
+      sinRanking: 2,
+      contactosUsados: 4,
       vacantes: [
         VacanteDeSucursal(
           slug: 'mesero',
@@ -320,6 +333,17 @@ const sucursalesMulti = Sucursales(
           candidatos: 4,
           sinRankear: 2,
         ),
+      ],
+    ),
+  ],
+  equipo: [
+    Persona(nombre: 'Antonio Pimentel', iniciales: 'AP', rol: 'Dueño'),
+    Persona(
+      nombre: 'Sofía Treviño',
+      iniciales: 'ST',
+      rol: 'Miembro',
+      sucursales: [
+        SucursalDePersona(nombre: 'Yaqui Parrilla Sonorense', colorIdx: 0),
       ],
     ),
   ],

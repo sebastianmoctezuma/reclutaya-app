@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:reclutaya_app/funciones/negocio/comun/modelos/sucursales.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
-import 'package:reclutaya_app/funciones/negocio/inicio/secciones/comunes.dart';
-import 'package:reclutaya_app/funciones/negocio/inicio/secciones/listas.dart';
+import 'package:reclutaya_app/funciones/negocio/sucursales/sucursales_vista.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
-import 'package:reclutaya_app/nucleo/ui/chip.dart';
 import 'package:reclutaya_app/nucleo/ui/esqueleto.dart';
 import 'package:reclutaya_app/nucleo/ui/estados.dart';
 
-/// Las activas de una cuenta multisucursal, como en la web: cada sucursal con su
-/// logo, «Principal» y sus vacantes debajo. Pura vista: sin «Agregar sucursal» ni
-/// «Crear vacante». Si el servidor aún no tiene `/negocio/sucursales`, `alternativa`
-/// (la lista plana de siempre) toma su lugar.
+/// La vista «Sucursales» de una cuenta multisucursal, como en la web: «Ver equipo» y
+/// una tarjeta por sucursal (tocarla abre su ventana). Pura vista: sin «Crear
+/// sucursal» ni «Invitar». Si el servidor aún no tiene `/negocio/sucursales`,
+/// `alternativa` (la lista plana de siempre) toma su lugar.
 class VacantesPorSucursal extends ConsumerWidget {
   const VacantesPorSucursal({required this.alternativa, super.key});
 
@@ -37,130 +33,47 @@ class VacantesPorSucursal extends ConsumerWidget {
     }
     final datos = s.value;
     if (datos == null) {
-      return const SliverPadding(
-        padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-        sliver: SliverToBoxAdapter(
-          child: Esqueleto(alto: 220, radio: radioGrande),
+      return SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+        sliver: SliverList.separated(
+          itemCount: 3,
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
+          itemBuilder: (_, _) => const Esqueleto(alto: 150, radio: radioGrande),
         ),
       );
     }
     if (datos.items.isEmpty) return alternativa;
+    final equipo = datos.equipo;
     return SliverMainAxisGroup(
       slivers: [
         if (s.error is SinRed) const SliverToBoxAdapter(child: BannerSinRed()),
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-          sliver: SliverList.list(
-            children: [for (final x in datos.items) _Sucursal(x)],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _Sucursal extends StatelessWidget {
-  const _Sucursal(this.s);
-
-  final SucursalConVacantes s;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final tt = Theme.of(context).textTheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 18, 4, 10),
-          child: Row(
-            children: [
-              LogoSucursal(
-                nombre: s.nombre,
-                imagenUrl: s.imagenUrl,
-                colorIdx: s.colorIdx,
-                tam: 36,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            s.nombre,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: tt.titleLarge,
-                          ),
-                        ),
-                        if (s.principal) ...[
-                          const SizedBox(width: 6),
-                          const ChipRY('Principal'),
-                        ],
-                      ],
-                    ),
-                    Text(
-                      s.vacantesActivas == 1
-                          ? '1 vacante activa'
-                          : '${s.vacantesActivas} vacantes activas',
-                      style: tt.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (s.vacantes.isEmpty)
-          Grupo(
-            sangria: 16,
-            renglones: [
-              Renglon(
-                hijo: Text(
-                  'Sin vacantes activas.',
-                  style: tt.bodyMedium!.copyWith(color: t.tintaSuave),
-                ),
-              ),
-            ],
-          )
-        else
-          Grupo(
-            sangria: 16,
-            renglones: [
-              for (final v in s.vacantes)
-                Renglon(
-                  hijo: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        v.puesto,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: tt.titleMedium,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        v.candidatos == 1
-                            ? '1 candidato'
-                            : '${v.candidatos} candidatos',
-                        style: tt.bodySmall,
-                      ),
-                    ],
+          padding: const EdgeInsets.fromLTRB(20, 2, 20, 12),
+          sliver: SliverToBoxAdapter(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Cada sucursal con su dirección, su equipo y sus vacantes.',
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  final_: v.sinRankear > 0
-                      ? ChipRY(
-                          '${v.sinRankear} sin rankear',
-                          tono: TonoChip.naranja,
-                        )
-                      : null,
-                  alTocar: () =>
-                      GoRouter.maybeOf(context)?.go('/vacantes/${v.slug}'),
                 ),
-            ],
+                if (equipo != null && equipo.isNotEmpty) ...[
+                  const SizedBox(width: 12),
+                  BotonEquipo(equipo),
+                ],
+              ],
+            ),
           ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverList.separated(
+            itemCount: datos.items.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
+            itemBuilder: (_, i) => TarjetaSucursal(datos.items[i]),
+          ),
+        ),
       ],
     );
   }

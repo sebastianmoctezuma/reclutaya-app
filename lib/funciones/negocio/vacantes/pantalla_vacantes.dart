@@ -11,7 +11,7 @@ import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 import 'package:reclutaya_app/nucleo/ui/estados.dart';
 import 'package:reclutaya_app/nucleo/vidrio/segmentado.dart';
 
-enum EstadoLista { activas, cerradas }
+enum EstadoLista { sucursales, activas, cerradas }
 
 /// Activas | Cerradas. El segmentado queda pegado arriba al desplazar. Con varias
 /// sucursales la pestaña se llama «Sucursales» (como en la web) y las activas se
@@ -24,17 +24,20 @@ class PantallaVacantes extends ConsumerStatefulWidget {
 }
 
 class _PantallaVacantesState extends ConsumerState<PantallaVacantes> {
-  EstadoLista _lista = EstadoLista.activas;
+  /// null = el de entrada: «Sucursales» si la cuenta tiene varias, si no «Activas».
+  EstadoLista? _elegida;
 
-  Future<void> _refrescar() async {
+  Future<void> _refrescar(EstadoLista lista) async {
     ref
       ..invalidate(vacantesActivasProvider)
       ..invalidate(vacantesCerradasProvider)
       ..invalidate(sucursalesProvider);
     try {
-      await (_lista == EstadoLista.activas
-          ? ref.read(vacantesActivasProvider.future)
-          : ref.read(vacantesCerradasProvider.future));
+      await switch (lista) {
+        EstadoLista.sucursales => ref.read(sucursalesProvider.future),
+        EstadoLista.activas => ref.read(vacantesActivasProvider.future),
+        EstadoLista.cerradas => ref.read(vacantesCerradasProvider.future),
+      };
     } on ErrorApi {
       // La lista ya muestra el error.
     }
@@ -43,30 +46,35 @@ class _PantallaVacantesState extends ConsumerState<PantallaVacantes> {
   @override
   Widget build(BuildContext context) {
     final multi = ref.watch(yoProvider).value?.variasSucursales ?? false;
+    var lista =
+        _elegida ?? (multi ? EstadoLista.sucursales : EstadoLista.activas);
+    if (!multi && lista == EstadoLista.sucursales) lista = EstadoLista.activas;
     return PaginaConTitulo(
       titulo: nombrePestanaVacantes(variasSucursales: multi),
-      alRefrescar: _refrescar,
+      alRefrescar: () => _refrescar(lista),
       slivers: [
         SliverPersistentHeader(
           pinned: true,
           delegate: _Pegado(
             alto: MediaQuery.textScalerOf(context).scale(58),
             hijo: Segmentado<EstadoLista>(
-              opciones: const {
-                EstadoLista.activas: 'Activas',
+              opciones: {
+                if (multi) EstadoLista.sucursales: 'Sucursales',
+                EstadoLista.activas: multi ? 'Vacantes' : 'Activas',
                 EstadoLista.cerradas: 'Cerradas',
               },
-              valor: _lista,
-              alCambiar: (v) => setState(() => _lista = v),
+              valor: lista,
+              alCambiar: (v) => setState(() => _elegida = v),
             ),
           ),
         ),
-        if (_lista == EstadoLista.cerradas)
-          _Cerradas()
-        else if (multi)
-          VacantesPorSucursal(alternativa: _Activas())
-        else
-          _Activas(),
+        switch (lista) {
+          EstadoLista.sucursales => VacantesPorSucursal(
+            alternativa: _Activas(),
+          ),
+          EstadoLista.activas => _Activas(),
+          EstadoLista.cerradas => _Cerradas(),
+        },
       ],
     );
   }

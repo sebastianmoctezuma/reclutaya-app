@@ -9,7 +9,6 @@ import 'package:reclutaya_app/funciones/cascaron/pantalla_cascaron.dart';
 import 'package:reclutaya_app/funciones/cuenta/pantalla_cuenta.dart';
 import 'package:reclutaya_app/funciones/negocio/candidato/pantalla_candidato.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/pantalla_inicio.dart';
-import 'package:reclutaya_app/funciones/negocio/ranking/pantalla_ranking.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/pantalla_vacante.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/pantalla_vacantes.dart';
 import 'package:reclutaya_app/nucleo/rutas/guardas.dart';
@@ -69,10 +68,14 @@ final routerProvider = Provider<GoRouter>((ref) {
                     builder: (_, s) =>
                         PantallaVacante(slug: s.pathParameters['slug']!),
                     routes: [
+                      // El ranking vive dentro de la ficha (como en la web):
+                      // esta ruta solo existe para la ficha del candidato.
                       GoRoute(
                         path: 'ranking',
-                        builder: (_, s) =>
-                            PantallaRanking(slug: s.pathParameters['slug']!),
+                        redirect: (_, s) =>
+                            s.fullPath == '/vacantes/:slug/ranking'
+                            ? '/vacantes/${s.pathParameters['slug']}'
+                            : null,
                         routes: [
                           GoRoute(
                             path: ':id',

@@ -107,9 +107,16 @@ class PantallaInicio extends ConsumerWidget {
           ),
         ),
       if (sucursales.isNotEmpty)
-        SliverSeccion(
-          titulo: 'Tus sucursales',
-          hijo: TusSucursales(sucursales: sucursales),
+        SliverMainAxisGroup(
+          slivers: [
+            const SliverPadding(
+              padding: ladosInicio,
+              sliver: SliverToBoxAdapter(
+                child: TituloSeccion('Tus sucursales'),
+              ),
+            ),
+            SliverToBoxAdapter(child: TusSucursales(sucursales: sucursales)),
+          ],
         ),
       if (pendientes != null)
         SliverSeccion(

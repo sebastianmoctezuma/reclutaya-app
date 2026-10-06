@@ -29,6 +29,8 @@ class FilaRanking {
     this.entregaFallo,
     this.requisitosIncumplidos = 0,
     this.requisitosTotal = 0,
+    this.razones = const [],
+    this.fase,
   });
 
   factory FilaRanking.fromJson(Map<String, dynamic> json) =>
@@ -67,6 +69,14 @@ class FilaRanking {
   final int requisitosIncumplidos;
   @JsonKey(defaultValue: 0)
   final int requisitosTotal;
+
+  /// La ficha de la IA ya partida en renglones (6-oct; antes, solo `resumen`).
+  @JsonKey(defaultValue: <String>[])
+  final List<String> razones;
+
+  /// `contratado` · `no_respondio` · `en_proceso` · `sin_iniciar`, la misma regla del
+  /// chip web. null con un servidor anterior.
+  final String? fase;
 }
 
 /// Solo en vacantes del modelo viejo de desbloqueos: filas difuminadas.

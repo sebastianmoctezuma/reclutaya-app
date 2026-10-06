@@ -65,23 +65,67 @@ void main() {
       empresa: EmpresaYo(nombre: 'Grupo Yaqui'),
     );
 
-    testWidgets('se llama Sucursales y agrupa las vacantes por sucursal', (
-      tester,
-    ) async {
+    Future<RepositorioFalso> abrir(WidgetTester tester) async {
       comoTelefono(tester);
       final r = RepositorioFalso()
         ..yoR = const Exito(yoMulti)
         ..sucursalesR = const Exito(sucursalesMulti);
       await tester.pumpWidget(_app(r));
       await tester.pumpAndSettle();
+      return r;
+    }
+
+    testWidgets('se llama Sucursales: tarjetas como en la web, sin acciones', (
+      tester,
+    ) async {
+      await abrir(tester);
       expect(find.text('Sucursales'), findsWidgets);
       expect(find.text('Yaqui Parrilla Sonorense'), findsOneWidget);
       expect(find.text('Principal'), findsOneWidget);
+      expect(find.text('Privada Ninguno 447, Reynosa'), findsOneWidget);
+      expect(find.text('1 vacante · 1 miembro'), findsOneWidget);
+      expect(find.text('ST'), findsOneWidget);
       expect(find.text('Altomar'), findsOneWidget);
-      expect(find.text('Cocinero/a'), findsOneWidget);
-      expect(find.text('Mesero'), findsOneWidget);
-      expect(find.text('2 sin rankear'), findsOneWidget);
-      expect(find.text('Agregar sucursal'), findsNothing);
+      expect(find.text('Ver equipo · 2'), findsOneWidget);
+      for (final accion in ['Crear sucursal', 'Invitar', 'Agregar sucursal']) {
+        expect(find.text(accion), findsNothing, reason: accion);
+      }
+    });
+
+    testWidgets(
+      'tocar una sucursal abre su ventana: números y vacantes, sin acciones',
+      (tester) async {
+        await abrir(tester);
+        await tester.tap(find.text('Altomar'));
+        await tester.pumpAndSettle();
+        expect(find.text('1 vacante en esta sucursal'), findsOneWidget);
+        expect(find.text('Sin ranking'), findsOneWidget);
+        expect(find.text('Contactos usados'), findsOneWidget);
+        expect(find.text('Mesero'), findsOneWidget);
+        expect(find.text('2 sin ranking'), findsOneWidget);
+        for (final accion in ['Crear vacante', 'Finalizar', 'Administrar']) {
+          expect(find.text(accion), findsNothing, reason: accion);
+        }
+      },
+    );
+
+    testWidgets('Ver equipo: el dueño y cada miembro con su rol', (
+      tester,
+    ) async {
+      await abrir(tester);
+      await tester.tap(find.text('Ver equipo · 2'));
+      await tester.pumpAndSettle();
+      expect(find.text('Antonio Pimentel'), findsOneWidget);
+      expect(find.text('Dueño'), findsOneWidget);
+      expect(find.text('Miembro'), findsOneWidget);
+      expect(find.text('Invitar'), findsNothing);
+    });
+
+    testWidgets('el segmento Vacantes lista las activas', (tester) async {
+      await abrir(tester);
+      await tester.tap(find.text('Vacantes'));
+      await tester.pumpAndSettle();
+      expect(find.text(vacanteActiva.puesto), findsOneWidget);
     });
 
     testWidgets('con un servidor anterior cae a la lista de activas', (

@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/inicio.dart';
@@ -6,6 +5,7 @@ import 'package:reclutaya_app/funciones/negocio/comun/modelos/vacantes.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/presentacion.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/inicio_core.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/secciones/comunes.dart';
+import 'package:reclutaya_app/funciones/negocio/sucursales/piezas.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 import 'package:reclutaya_app/nucleo/ui/chip.dart';
 import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
@@ -13,8 +13,9 @@ import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
 void _ir(BuildContext context, String ruta) =>
     GoRouter.maybeOf(context)?.go(ruta);
 
-/// «Tus sucursales»: logo, nombre, «Principal» y cuántas vacantes tiene. Tocar lleva a
-/// la pestaña Sucursales. Sin «Agregar sucursal»: es pura vista.
+/// «Tus sucursales»: un carrusel con las tarjetas teñidas de la vista Sucursales (logo,
+/// «Principal», vacantes y lo de la semana). Tocar una lleva a la pestaña Sucursales.
+/// Sin «Agregar sucursal»: es pura vista.
 class TusSucursales extends StatelessWidget {
   const TusSucursales({required this.sucursales, super.key});
 
@@ -22,92 +23,94 @@ class TusSucursales extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tt = Theme.of(context).textTheme;
-    return Grupo(
-      renglones: [
-        for (final s in sucursales)
-          Renglon(
-            inicio: LogoSucursal(
-              nombre: s.nombre,
-              imagenUrl: s.imagenUrl,
-              colorIdx: s.colorIdx,
-            ),
-            hijo: Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    s.nombre,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: tt.titleMedium,
-                  ),
-                ),
-                if (s.principal) ...[
-                  const SizedBox(width: 6),
-                  const ChipRY('Principal'),
-                ],
-              ],
-            ),
-            final_: Text(
-              s.vacantesActivas == 1
-                  ? '1 vacante'
-                  : '${s.vacantesActivas} vacantes',
-              style: tt.bodySmall,
-            ),
-            alTocar: () => _ir(context, '/vacantes'),
-          ),
-      ],
+    final escala = MediaQuery.textScalerOf(context).scale(1).clamp(1.0, 1.6);
+    return SizedBox(
+      height: 150 * escala,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        // A sangre: corre hasta la orilla de la pantalla, como los carruseles de iOS.
+        padding: ladosInicio,
+        clipBehavior: Clip.none,
+        itemCount: sucursales.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        itemBuilder: (context, i) =>
+            SizedBox(width: 250, child: _MiniSucursal(sucursales[i])),
+      ),
     );
   }
 }
 
-/// El logo de una sucursal (su imagen pública) o su inicial sobre su color.
-class LogoSucursal extends StatelessWidget {
-  const LogoSucursal({
-    required this.nombre,
-    required this.colorIdx,
-    this.imagenUrl,
-    this.tam = 32,
-    super.key,
-  });
+class _MiniSucursal extends StatelessWidget {
+  const _MiniSucursal(this.s);
 
-  final String nombre;
-  final String? imagenUrl;
-  final int colorIdx;
-  final double tam;
+  final SucursalInicio s;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final inicial = Container(
-      width: tam,
-      height: tam,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: colorSucursal(colorIdx, oscuro: t.esOscuro),
-        shape: BoxShape.circle,
-      ),
-      child: Text(
-        nombre.isEmpty ? '' : nombre.characters.first.toUpperCase(),
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontWeight: FontWeight.w700,
-          fontSize: tam * 0.42,
-          color: t.sobreVerde,
-        ),
-      ),
-    );
-    if (imagenUrl == null || imagenUrl!.isEmpty) return inicial;
-    return ClipOval(
-      child: SizedBox(
-        width: tam,
-        height: tam,
-        child: CachedNetworkImage(
-          imageUrl: imagenUrl!,
-          fit: BoxFit.cover,
-          placeholder: (_, _) => inicial,
-          errorWidget: (_, _, _) => inicial,
-        ),
+    final tt = Theme.of(context).textTheme;
+    final semana = [
+      '${plural(s.candidatosSemana, 'candidato', 'candidatos')} esta semana',
+      if (s.sinRanking > 0) '${s.sinRanking} sin ranking',
+    ].join(' · ');
+    return SuperficieSucursal(
+      colorIdx: s.colorIdx,
+      padding: const EdgeInsets.all(14),
+      alTocar: () => _ir(context, '/vacantes'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              LogoSucursal(
+                nombre: s.nombre,
+                imagenUrl: s.imagenUrl,
+                colorIdx: s.colorIdx,
+                tam: 28,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  s.nombre,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: tt.titleMedium,
+                ),
+              ),
+              if (s.principal) ...[
+                const SizedBox(width: 6),
+                const ChipRY('Principal'),
+              ],
+            ],
+          ),
+          const Spacer(),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${s.vacantesActivas}',
+                style: tt.headlineMedium!.copyWith(fontSize: 30, height: 1),
+              ),
+              const SizedBox(width: 6),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 3),
+                child: Text(
+                  s.vacantesActivas == 1 ? 'vacante' : 'vacantes',
+                  style: tt.bodySmall,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            semana,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: tt.labelMedium!.copyWith(
+              color: s.sinRanking > 0 ? t.naranjaProfundo : t.tintaSuave,
+            ),
+          ),
+        ],
       ),
     );
   }

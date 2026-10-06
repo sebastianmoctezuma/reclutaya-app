@@ -23,6 +23,7 @@ class RepositorioFalso implements RepositorioNegocio {
     Sucursales(multisucursal: false),
   );
   int llamadasCandidato = 0;
+  int llamadasRanking = 0;
   int llamadasYo = 0;
   int llamadasInicio = 0;
   Duration demora = Duration.zero;
@@ -54,7 +55,10 @@ class RepositorioFalso implements RepositorioNegocio {
   Future<Resultado<VacanteFicha>> vacante(String slug) => _r(vacanteR);
 
   @override
-  Future<Resultado<Ranking>> ranking(String slug) => _r(rankingR);
+  Future<Resultado<Ranking>> ranking(String slug) {
+    llamadasRanking++;
+    return _r(rankingR);
+  }
 
   @override
   Future<Resultado<Sucursales>> sucursales() => _r(sucursalesR);

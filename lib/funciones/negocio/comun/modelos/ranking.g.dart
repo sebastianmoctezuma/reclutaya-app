@@ -31,6 +31,10 @@ FilaRanking _$FilaRankingFromJson(Map<String, dynamic> json) => FilaRanking(
   entregaFallo: json['entregaFallo'] as String?,
   requisitosIncumplidos: (json['requisitosIncumplidos'] as num?)?.toInt() ?? 0,
   requisitosTotal: (json['requisitosTotal'] as num?)?.toInt() ?? 0,
+  razones:
+      (json['razones'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      [],
+  fase: json['fase'] as String?,
 );
 
 Bloqueado _$BloqueadoFromJson(Map<String, dynamic> json) => Bloqueado(

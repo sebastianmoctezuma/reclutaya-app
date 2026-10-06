@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:reclutaya_app/funciones/negocio/comun/modelos/ranking.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/vacantes.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/pantalla_vacante.dart';
@@ -25,30 +26,71 @@ Widget _app(RepositorioFalso r) => ProviderScope(
 void main() {
   setUpAll(() => initializeDateFormatting('es_MX'));
 
-  testWidgets('pinta puesto, estado, datos, conteos y el acceso al ranking', (
-    tester,
-  ) async {
+  final lista = find.byType(CustomScrollView);
+
+  testWidgets(
+    'la ficha y, debajo, el ranking: sin botón aparte y sin acciones',
+    (tester) async {
+      comoTelefono(tester);
+      await tester.pumpWidget(_app(RepositorioFalso()));
+      await tester.pumpAndSettle();
+      expect(find.text(fichaVacante.puesto), findsWidgets);
+      expect(find.text('Activa'), findsOneWidget);
+      expect(find.text('Matutino'), findsOneWidget);
+      expect(find.text('Reynosa'), findsOneWidget);
+      await tester.dragUntilVisible(
+        find.text('Ana'),
+        lista,
+        const Offset(0, -300),
+      );
+      expect(find.text('Ana'), findsOneWidget);
+      await tester.dragUntilVisible(
+        find.text('Marta Ruiz'),
+        lista,
+        const Offset(0, -300),
+      );
+      expect(find.text('Marta Ruiz'), findsOneWidget);
+      for (final accion in [
+        'Ver ranking',
+        'Finalizar',
+        'Administrar',
+        'Contactar',
+        'Generar ranking',
+      ]) {
+        expect(
+          find.text(accion),
+          findsNothing,
+          reason: 'es pura vista: $accion',
+        );
+      }
+    },
+  );
+
+  testWidgets('la descripción va plegada y se abre al tocarla', (tester) async {
     comoTelefono(tester);
     await tester.pumpWidget(_app(RepositorioFalso()));
     await tester.pumpAndSettle();
-    expect(find.text(fichaVacante.puesto), findsWidgets);
-    expect(find.text('Activa'), findsOneWidget);
-    expect(find.text('Matutino'), findsOneWidget);
-    await tester.dragUntilVisible(
-      find.text('Requisito'),
-      find.byType(CustomScrollView),
-      const Offset(0, -300),
-    );
-    expect(find.text('Requisito'), findsOneWidget);
-    final boton = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Ver ranking'),
-    );
-    expect(boton.onPressed, isNotNull);
+    expect(find.text('Atender mesas en turno matutino.'), findsNothing);
+    await tester.tap(find.text('Descripción de la vacante'));
+    await tester.pumpAndSettle();
+    expect(find.text('Atender mesas en turno matutino.'), findsOneWidget);
   });
 
-  testWidgets('sin candidatos el botón lo dice y está deshabilitado', (
-    tester,
-  ) async {
+  testWidgets('con candidatos pero sin ranking, lo dice', (tester) async {
+    comoTelefono(tester);
+    final r = RepositorioFalso()
+      ..rankingR = const Exito(Ranking(total: 0, visibles: []));
+    await tester.pumpWidget(_app(r));
+    await tester.pumpAndSettle();
+    await tester.dragUntilVisible(
+      find.text('Aún no hay ranking'),
+      lista,
+      const Offset(0, -300),
+    );
+    expect(find.text('Aún no hay ranking'), findsOneWidget);
+  });
+
+  testWidgets('sin candidatos lo dice y no pide el ranking', (tester) async {
     comoTelefono(tester);
     final r = RepositorioFalso()
       ..vacanteR = const Exito(
@@ -68,11 +110,14 @@ void main() {
       );
     await tester.pumpWidget(_app(r));
     await tester.pumpAndSettle();
-    final boton = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'Aún no hay candidatos'),
+    await tester.dragUntilVisible(
+      find.text('Aún no hay candidatos'),
+      lista,
+      const Offset(0, -300),
     );
-    expect(boton.onPressed, isNull);
+    expect(find.text('Aún no hay candidatos'), findsOneWidget);
     expect(find.text('Cumplen requisitos'), findsNothing);
+    expect(r.llamadasRanking, 0);
   });
 
   testWidgets('si ya no existe, lo dice y ofrece Volver', (tester) async {

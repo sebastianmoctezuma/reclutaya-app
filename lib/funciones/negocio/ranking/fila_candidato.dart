@@ -6,12 +6,12 @@ import 'package:reclutaya_app/nucleo/ui/apellido_difuminado.dart';
 import 'package:reclutaya_app/nucleo/ui/chip.dart';
 import 'package:reclutaya_app/nucleo/ui/esqueleto.dart';
 import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
-import 'package:reclutaya_app/nucleo/util/formato.dart';
 
-/// La fila del ranking (la `.candRow` de la web): número, nombre con el
-/// apellido difuminado si no se ha contactado, «N pts», zona y traslado, los
-/// chips de materiales y de proceso, y «Cumple X de Y». TAL COMO LLEGA del
-/// servidor: aquí no se deriva nada. Superficie sólida, con `RepaintBoundary`.
+/// La fila del ranking, la `.candRow` de la web: posición, nombre con el apellido
+/// difuminado si no se ha contactado, el chip de la fase, «Cumple X de Y» y traslado,
+/// la ficha de la IA en renglones y, a la derecha, el material YA ENTREGADO (video,
+/// documento, test con su %) y los puntos. Lo pedido y aún no entregado no se pinta.
+/// TAL COMO LLEGA del servidor: aquí no se deriva nada.
 class FilaCandidato extends StatelessWidget {
   const FilaCandidato({required this.fila, required this.alTocar, super.key});
 
@@ -23,90 +23,235 @@ class FilaCandidato extends StatelessWidget {
     final t = context.t;
     final tt = Theme.of(context).textTheme;
     final f = fila;
-    final zona = [
-      if (f.zona != null) f.zona!,
-      if (f.minutosTraslado != null) textoTraslado(f.minutosTraslado),
-    ].join(' · ');
     final cumple = textoCumple(f.requisitosIncumplidos, f.requisitosTotal);
-    final chips = <Widget>[
-      if (f.contactado) const ChipRY('Contactado', tono: TonoChip.azul),
-      if (f.noRespondio) const ChipRY('No respondió', tono: TonoChip.naranja),
-      if (f.contratado) const ChipRY('Contratado', tono: TonoChip.verde),
-      ..._materiales(f),
-      if (f.fechaLimite != null && !f.contratado)
-        ChipRY('Vence ${fechaCorta(f.fechaLimite!)}'),
+    final fase = switch (f.fase) {
+      'contratado' => const ChipRY('Contratado', tono: TonoChip.verde),
+      'no_respondio' => const ChipRY('No respondió', tono: TonoChip.naranja),
+      'en_proceso' => const ChipRY('En proceso', tono: TonoChip.azul),
+      // Servidor anterior (sin `fase`): lo que ya traía la fila.
+      null when f.contratado => const ChipRY(
+        'Contratado',
+        tono: TonoChip.verde,
+      ),
+      null when f.noRespondio => const ChipRY(
+        'No respondió',
+        tono: TonoChip.naranja,
+      ),
+      _ => null,
+    };
+    final razones = f.razones.isNotEmpty
+        ? f.razones
+        : [if (f.resumen != null && f.resumen!.trim().isNotEmpty) f.resumen!];
+    final materiales = <Widget>[
+      if (f.videoRecibido)
+        const _Material(
+          key: ValueKey('mat-video'),
+          icono: Icons.videocam_rounded,
+          etiqueta: 'Video recibido',
+        ),
+      if (f.documentoRecibido)
+        const _Material(
+          key: ValueKey('mat-doc'),
+          icono: Icons.description_rounded,
+          etiqueta: 'Documento recibido',
+        ),
+      if (f.testScore != null)
+        _DonaTest(key: const ValueKey('mat-test'), pct: f.testScore!),
     ];
 
     return RepaintBoundary(
       child: Tarjeta(
         padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
         alTocar: alTocar,
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              width: 28,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  '${f.ranking}',
-                  style: tt.titleMedium!.copyWith(
-                    color: t.tintaTenue,
-                    fontVariations: const [FontVariation('wght', 700)],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: f.ranking <= 3 ? t.verdeBrillo : t.papel,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '${f.ranking}',
+                    style: tt.labelLarge!.copyWith(
+                      color: f.ranking <= 3 ? t.verdeProfundo : t.tintaSuave,
+                    ),
                   ),
                 ),
-              ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Row(
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              f.nombre,
+                              style: tt.titleMedium,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (f.apellidoOculto) const ApellidoDifuminado(),
+                        ],
+                      ),
+                      if (fase != null ||
+                          cumple != null ||
+                          f.minutosTraslado != null) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            Flexible(
-                              child: Text(
-                                f.nombre,
-                                style: tt.titleMedium,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                            ?fase,
+                            if (cumple != null)
+                              Text(
+                                cumple,
+                                style: tt.labelMedium!.copyWith(
+                                  color: f.requisitosIncumplidos == 0
+                                      ? t.verdeProfundo
+                                      : t.naranjaProfundo,
+                                ),
+                              ),
+                            if (f.minutosTraslado != null)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.schedule_rounded,
+                                    size: 13,
+                                    color: t.tintaSuave,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    '~${f.minutosTraslado} min',
+                                    style: tt.labelMedium,
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _Puntaje(f.score),
+              ],
+            ),
+            if (razones.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 38),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final r in razones)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 3),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 7, right: 8),
+                              child: Container(
+                                width: 4,
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: t.verde,
+                                  shape: BoxShape.circle,
+                                ),
                               ),
                             ),
-                            if (f.apellidoOculto) const ApellidoDifuminado(),
+                            Expanded(child: Text(r, style: tt.bodySmall)),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      _Puntaje(f.score),
-                    ],
-                  ),
-                  if (zona.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      zona,
-                      style: tt.bodySmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
                   ],
-                  if (cumple != null) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      cumple,
-                      style: tt.labelMedium!.copyWith(
-                        color: f.requisitosIncumplidos == 0
-                            ? t.verdeProfundo
-                            : t.naranjaProfundo,
-                      ),
-                    ),
-                  ],
-                  if (chips.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Wrap(spacing: 6, runSpacing: 6, children: chips),
-                  ],
-                ],
+                ),
+              ),
+            ],
+            if (materiales.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(left: 38),
+                child: Wrap(spacing: 8, runSpacing: 8, children: materiales),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Un material entregado: el ícono en su cuadro verde, como el `.candMatOk` web.
+class _Material extends StatelessWidget {
+  const _Material({required this.icono, required this.etiqueta, super.key});
+
+  final IconData icono;
+  final String etiqueta;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return Semantics(
+      label: etiqueta,
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: t.verdeBrillo,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icono, size: 18, color: t.verdeProfundo),
+      ),
+    );
+  }
+}
+
+/// El test respondido: su dona con el porcentaje de compatibilidad.
+class _DonaTest extends StatelessWidget {
+  const _DonaTest({required this.pct, super.key});
+
+  final num pct;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final p = pct.clamp(0, 100).toDouble();
+    return Semantics(
+      label: 'Test respondido: ${p.round()}% de compatibilidad',
+      child: SizedBox(
+        width: 34,
+        height: 34,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox.expand(
+              child: CircularProgressIndicator(
+                value: p / 100,
+                strokeWidth: 3.5,
+                backgroundColor: t.linea,
+                color: t.naranja,
+                strokeCap: StrokeCap.round,
+              ),
+            ),
+            Text(
+              '${p.round()}%',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w700,
+                fontSize: 9.5,
+                color: t.tinta,
               ),
             ),
           ],
@@ -114,35 +259,9 @@ class FilaCandidato extends StatelessWidget {
       ),
     );
   }
-
-  static List<Widget> _materiales(FilaRanking f) {
-    final video = textoMaterial(
-      solicitado: f.videoSolicitado,
-      recibido: f.videoRecibido,
-    );
-    final doc = textoMaterial(
-      solicitado: f.documentoSolicitado,
-      recibido: f.documentoRecibido,
-    );
-    return [
-      if (video != null)
-        ChipRY(
-          'Video ${video.toLowerCase()}',
-          tono: f.videoRecibido ? TonoChip.verde : TonoChip.neutro,
-        ),
-      if (doc != null)
-        ChipRY(
-          'Documento ${doc.toLowerCase()}',
-          tono: f.documentoRecibido ? TonoChip.verde : TonoChip.neutro,
-        ),
-      if (f.testEstado == 'RESPONDIDA')
-        const ChipRY('Test respondido', tono: TonoChip.verde)
-      else if (f.testEstado != 'NO_ENVIADA')
-        const ChipRY('Test enviado'),
-    ];
-  }
 }
 
+/// «87 pts», como el `.candScore` web.
 class _Puntaje extends StatelessWidget {
   const _Puntaje(this.score);
 
@@ -151,21 +270,25 @@ class _Puntaje extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: t.verdeBrillo,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        score == null ? '—' : '${score!.round()} pts',
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-          color: t.verdeProfundo,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          score == null ? '—' : '${score!.round()}',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w800,
+            fontSize: 22,
+            height: 1,
+            color: t.verdeProfundo,
+          ),
         ),
-      ),
+        Text(
+          'pts',
+          style: Theme.of(context).textTheme.labelSmall!
+              .copyWith(color: t.tintaSuave),
+        ),
+      ],
     );
   }
 }

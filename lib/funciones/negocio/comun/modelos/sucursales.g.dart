@@ -15,6 +15,23 @@ VacanteDeSucursal _$VacanteDeSucursalFromJson(Map<String, dynamic> json) =>
       sinRankear: (json['sinRankear'] as num?)?.toInt() ?? 0,
     );
 
+Persona _$PersonaFromJson(Map<String, dynamic> json) => Persona(
+  nombre: json['nombre'] as String,
+  iniciales: json['iniciales'] as String,
+  rol: json['rol'] as String?,
+  sucursales:
+      (json['sucursales'] as List<dynamic>?)
+          ?.map((e) => SucursalDePersona.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
+);
+
+SucursalDePersona _$SucursalDePersonaFromJson(Map<String, dynamic> json) =>
+    SucursalDePersona(
+      nombre: json['nombre'] as String,
+      colorIdx: (json['colorIdx'] as num).toInt(),
+    );
+
 SucursalConVacantes _$SucursalConVacantesFromJson(Map<String, dynamic> json) =>
     SucursalConVacantes(
       id: json['id'] as String,
@@ -30,6 +47,15 @@ SucursalConVacantes _$SucursalConVacantesFromJson(Map<String, dynamic> json) =>
               )
               .toList() ??
           [],
+      direccion: json['direccion'] as String?,
+      activas: (json['activas'] as num?)?.toInt() ?? 0,
+      sinRanking: (json['sinRanking'] as num?)?.toInt() ?? 0,
+      contactosUsados: (json['contactosUsados'] as num?)?.toInt() ?? 0,
+      miembros:
+          (json['miembros'] as List<dynamic>?)
+              ?.map((e) => Persona.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
 
 Sucursales _$SucursalesFromJson(Map<String, dynamic> json) => Sucursales(
@@ -39,4 +65,7 @@ Sucursales _$SucursalesFromJson(Map<String, dynamic> json) => Sucursales(
           ?.map((e) => SucursalConVacantes.fromJson(e as Map<String, dynamic>))
           .toList() ??
       [],
+  equipo: (json['equipo'] as List<dynamic>?)
+      ?.map((e) => Persona.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
