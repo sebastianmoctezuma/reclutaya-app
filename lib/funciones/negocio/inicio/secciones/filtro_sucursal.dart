@@ -117,7 +117,8 @@ class FiltroSucursalPastilla extends ConsumerWidget {
                     elegida?.nombre ?? 'Todas las sucursales',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelLarge,
+                    style: Theme.of(context).textTheme.labelLarge!
+                        .copyWith(color: t.tinta),
                   ),
                 ),
                 const SizedBox(width: 4),

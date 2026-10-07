@@ -9,9 +9,9 @@ import 'package:reclutaya_app/funciones/negocio/sucursales/piezas.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 import 'package:reclutaya_app/nucleo/ui/chip.dart';
+import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
 import 'package:reclutaya_app/nucleo/util/formato.dart';
 import 'package:reclutaya_app/nucleo/vidrio/hoja.dart';
-import 'package:reclutaya_app/nucleo/vidrio/vidrio.dart';
 
 /// La tarjeta de una sucursal en la vista «Sucursales», como la web: logo, nombre,
 /// «Principal», dirección, vacantes · miembros y las iniciales del equipo. Tocarla
@@ -86,6 +86,30 @@ class TarjetaSucursal extends StatelessWidget {
             '${plural(s.miembros.length, 'miembro', 'miembros')}',
             style: tt.bodySmall,
           ),
+          if (s.sinRanking > 0) ...[
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: t.naranja,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  plural(
+                    s.sinRanking,
+                    'candidato sin ranking',
+                    'candidatos sin ranking',
+                  ),
+                  style: tt.labelMedium!.copyWith(color: t.naranjaProfundo),
+                ),
+              ],
+            ),
+          ],
           if (s.miembros.isNotEmpty) ...[
             const SizedBox(height: 12),
             Wrap(
@@ -105,41 +129,68 @@ class TarjetaSucursal extends StatelessWidget {
   }
 }
 
-/// «Ver equipo · N»: una pastilla de vidrio que abre la hoja del equipo.
-class BotonEquipo extends StatelessWidget {
-  const BotonEquipo(this.equipo, {super.key});
+/// «Tu equipo»: una fila como las de Ajustes de iOS, con las iniciales encimadas,
+/// cuántas personas son y el chevrón. Abre la hoja del equipo.
+class FilaEquipo extends StatelessWidget {
+  const FilaEquipo(this.equipo, {super.key});
 
   final List<Persona> equipo;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return Vidrio.pastilla(
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: () {
-            hapticoSeleccion();
-            unawaited(
-              mostrarHojaVidrio(context, builder: (_) => _HojaEquipo(equipo)),
-            );
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+    final tt = Theme.of(context).textTheme;
+    final visibles = equipo.take(4).toList();
+    const tam = 34.0;
+    return Tarjeta(
+      padding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
+      alTocar: () {
+        hapticoSeleccion();
+        unawaited(
+          mostrarHojaVidrio(context, builder: (_) => _HojaEquipo(equipo)),
+        );
+      },
+      child: Row(
+        children: [
+          SizedBox(
+            width: tam + (visibles.length - 1) * (tam * 0.62),
+            height: tam,
+            child: Stack(
               children: [
-                Icon(CupertinoIcons.person_2, size: 17, color: t.tinta),
-                const SizedBox(width: 7),
+                for (final (i, p) in visibles.indexed)
+                  Positioned(
+                    left: i * tam * 0.62,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: t.tarjeta, width: 2),
+                      ),
+                      child: Iniciales(
+                        p.iniciales,
+                        colorIdx: p.sucursales.isEmpty
+                            ? 0
+                            : p.sucursales.first.colorIdx,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Tu equipo', style: tt.titleMedium),
                 Text(
-                  'Ver equipo · ${equipo.length}',
-                  style: Theme.of(context).textTheme.labelLarge,
+                  plural(equipo.length, 'persona', 'personas'),
+                  style: tt.bodySmall,
                 ),
               ],
             ),
           ),
-        ),
+          Icon(CupertinoIcons.chevron_right, size: 15, color: t.tintaTenue),
+        ],
       ),
     );
   }

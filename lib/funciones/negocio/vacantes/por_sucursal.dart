@@ -47,25 +47,11 @@ class VacantesPorSucursal extends ConsumerWidget {
     return SliverMainAxisGroup(
       slivers: [
         if (s.error is SinRed) const SliverToBoxAdapter(child: BannerSinRed()),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 2, 20, 12),
-          sliver: SliverToBoxAdapter(
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Cada sucursal con su dirección, su equipo y sus vacantes.',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-                if (equipo != null && equipo.isNotEmpty) ...[
-                  const SizedBox(width: 12),
-                  BotonEquipo(equipo),
-                ],
-              ],
-            ),
+        if (equipo != null && equipo.isNotEmpty)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            sliver: SliverToBoxAdapter(child: FilaEquipo(equipo)),
           ),
-        ),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverList.separated(

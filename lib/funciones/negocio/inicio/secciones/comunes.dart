@@ -4,6 +4,8 @@ import 'package:reclutaya_app/nucleo/plataforma/plataforma.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
 
+export 'package:reclutaya_app/nucleo/ui/tesela.dart';
+
 /// Piezas comunes de las secciones del Inicio, al estilo de las listas agrupadas de
 /// iOS (Ajustes, Salud): título de sección grande, tarjeta con renglones separados por
 /// una línea fina que no llega al borde izquierdo, ícono en un cuadro de color.
@@ -120,34 +122,5 @@ class Renglon extends StatelessWidget {
     );
     if (alTocar == null) return cuerpo;
     return InkWell(onTap: alTocar, child: cuerpo);
-  }
-}
-
-/// El cuadro de color con un ícono (como los íconos de Ajustes de iOS).
-class Tesela extends StatelessWidget {
-  const Tesela({
-    required this.icono,
-    required this.color,
-    required this.fondo,
-    this.tam = 30,
-    super.key,
-  });
-
-  final IconData icono;
-  final Color color;
-  final Color fondo;
-  final double tam;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: tam,
-      height: tam,
-      decoration: BoxDecoration(
-        color: fondo,
-        borderRadius: BorderRadius.circular(tam * 0.28),
-      ),
-      child: Icon(icono, size: tam * 0.56, color: color),
-    );
   }
 }

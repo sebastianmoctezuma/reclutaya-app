@@ -18,6 +18,9 @@ class App extends ConsumerWidget {
       routerConfig: ref.watch(routerProvider),
       theme: temaClaro(),
       darkTheme: temaOscuro(),
+      // Siempre clara (decisión del dueño, 6-oct): verde arriba que se funde con el
+      // blanco hacia abajo.
+      themeMode: ThemeMode.light,
       locale: const Locale('es', 'MX'),
       supportedLocales: const [Locale('es', 'MX')],
       localizationsDelegates: const [

@@ -9,8 +9,10 @@ import 'package:reclutaya_app/nucleo/red/errores_api.dart';
 import 'package:reclutaya_app/nucleo/sesion/providers.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 import 'package:reclutaya_app/nucleo/ui/avatar_iniciales.dart';
+import 'package:reclutaya_app/nucleo/ui/chip.dart';
 import 'package:reclutaya_app/nucleo/ui/esqueleto.dart';
 import 'package:reclutaya_app/nucleo/ui/estados.dart';
+import 'package:reclutaya_app/nucleo/ui/logo_negocio.dart';
 import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -56,21 +58,41 @@ class PantallaCuenta extends ConsumerWidget {
                 data: (y) => Tarjeta(
                   child: Row(
                     children: [
-                      AvatarIniciales(y.iniciales, tam: 56),
+                      if (y.empresa != null)
+                        LogoNegocio(
+                          nombre: y.empresa!.nombre,
+                          url: y.empresa!.logoUrl,
+                          logoFit: y.empresa!.logoFit,
+                          tam: 60,
+                        )
+                      else
+                        AvatarIniciales(y.iniciales, tam: 60),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              y.nombre ?? y.empresa?.nombre ?? 'Tu cuenta',
+                              y.empresa?.nombre ?? y.nombre ?? 'Tu cuenta',
                               style: tt.titleLarge,
                             ),
                             const SizedBox(height: 2),
-                            Text(etiquetaRol(y.rol), style: tt.labelMedium),
-                            if (y.empresa != null) ...[
-                              const SizedBox(height: 2),
-                              Text(y.empresa!.nombre, style: tt.bodySmall),
+                            Text(
+                              [
+                                if (y.nombre != null) y.nombre!,
+                                etiquetaRol(y.rol),
+                              ].join(' · '),
+                              style: tt.bodySmall,
+                            ),
+                            if (y.empresa?.plan != null) ...[
+                              const SizedBox(height: 8),
+                              ChipRY(
+                                y.empresa!.plan == 'Ilimitada' ||
+                                        y.empresa!.plan == 'Gratis'
+                                    ? 'Cuenta ${y.empresa!.plan!.toLowerCase()}'
+                                    : 'Plan ${y.empresa!.plan}',
+                                tono: TonoChip.verde,
+                              ),
                             ],
                           ],
                         ),
@@ -173,7 +195,8 @@ class _Version extends StatelessWidget {
       builder: (context, s) => Center(
         child: Text(
           s.data ?? '',
-          style: Theme.of(context).textTheme.labelSmall,
+          style: Theme.of(context).textTheme.labelSmall!
+              .copyWith(color: context.t.tintaSuave),
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/ranking.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/presentacion.dart';
+import 'package:reclutaya_app/funciones/negocio/ranking/filtro_material.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 import 'package:reclutaya_app/nucleo/ui/apellido_difuminado.dart';
 import 'package:reclutaya_app/nucleo/ui/chip.dart';
@@ -69,18 +70,22 @@ class FilaCandidato extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // El número del top como en la web: cuadro ámbar con el número blanco.
                 Container(
-                  width: 28,
-                  height: 28,
+                  width: 38,
+                  height: 38,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: f.ranking <= 3 ? t.verdeBrillo : t.papel,
-                    shape: BoxShape.circle,
+                    color: t.naranja,
+                    borderRadius: BorderRadius.circular(11),
                   ),
                   child: Text(
                     '${f.ranking}',
-                    style: tt.labelLarge!.copyWith(
-                      color: f.ranking <= 3 ? t.verdeProfundo : t.tintaSuave,
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w800,
+                      fontSize: 17,
+                      color: t.sobreVerde,
                     ),
                   ),
                 ),
@@ -150,7 +155,7 @@ class FilaCandidato extends StatelessWidget {
             if (razones.isNotEmpty) ...[
               const SizedBox(height: 10),
               Padding(
-                padding: const EdgeInsets.only(left: 38),
+                padding: const EdgeInsets.only(left: 48),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -182,7 +187,7 @@ class FilaCandidato extends StatelessWidget {
             if (materiales.isNotEmpty) ...[
               const SizedBox(height: 10),
               Padding(
-                padding: const EdgeInsets.only(left: 38),
+                padding: const EdgeInsets.only(left: 48),
                 child: Wrap(spacing: 8, runSpacing: 8, children: materiales),
               ),
             ],
@@ -193,7 +198,7 @@ class FilaCandidato extends StatelessWidget {
   }
 }
 
-/// Un material entregado: el ícono en su cuadro verde, como el `.candMatOk` web.
+/// Un material entregado, como el `.candMatOk` web: el ícono en verde.
 class _Material extends StatelessWidget {
   const _Material({required this.icono, required this.etiqueta, super.key});
 
@@ -202,23 +207,19 @@ class _Material extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
     return Semantics(
       label: etiqueta,
-      child: Container(
-        width: 34,
-        height: 34,
-        decoration: BoxDecoration(
-          color: t.verdeBrillo,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(icono, size: 18, color: t.verdeProfundo),
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: Icon(icono, size: 26, color: context.t.verde),
       ),
     );
   }
 }
 
-/// El test respondido: su dona con el porcentaje de compatibilidad.
+/// El test respondido: la dona de la web, con el color de su nivel (verde ≥ 70, ámbar
+/// ≥ 45, rojo abajo), el % y «Test».
 class _DonaTest extends StatelessWidget {
   const _DonaTest({required this.pct, super.key});
 
@@ -228,31 +229,52 @@ class _DonaTest extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.t;
     final p = pct.clamp(0, 100).toDouble();
+    final color = switch (nivelTest(p)) {
+      NivelTest.alto => t.verde,
+      NivelTest.medio => t.naranja,
+      NivelTest.bajo => t.rojo,
+    };
     return Semantics(
       label: 'Test respondido: ${p.round()}% de compatibilidad',
       child: SizedBox(
-        width: 34,
-        height: 34,
+        width: 44,
+        height: 44,
         child: Stack(
           alignment: Alignment.center,
           children: [
             SizedBox.expand(
               child: CircularProgressIndicator(
                 value: p / 100,
-                strokeWidth: 3.5,
+                strokeWidth: 4.5,
                 backgroundColor: t.linea,
-                color: t.naranja,
+                color: color,
                 strokeCap: StrokeCap.round,
               ),
             ),
-            Text(
-              '${p.round()}%',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w700,
-                fontSize: 9.5,
-                color: t.tinta,
-              ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${p.round()}%',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w800,
+                    fontSize: 10.5,
+                    height: 1,
+                    color: color,
+                  ),
+                ),
+                Text(
+                  'Test',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 7.5,
+                    height: 1.2,
+                    color: t.tintaSuave,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -261,7 +283,7 @@ class _DonaTest extends StatelessWidget {
   }
 }
 
-/// «87 pts», como el `.candScore` web.
+/// «87 PTS», como el `.candScore` web: caja verde clara, número verde profundo.
 class _Puntaje extends StatelessWidget {
   const _Puntaje(this.score);
 
@@ -270,25 +292,39 @@ class _Puntaje extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          score == null ? '—' : '${score!.round()}',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w800,
-            fontSize: 22,
-            height: 1,
-            color: t.verdeProfundo,
+    return Container(
+      constraints: const BoxConstraints(minWidth: 56),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: t.verdeBrillo,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            score == null ? '—' : '${score!.round()}',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w800,
+              fontSize: 22,
+              height: 1,
+              color: t.verdeProfundo,
+            ),
           ),
-        ),
-        Text(
-          'pts',
-          style: Theme.of(context).textTheme.labelSmall!
-              .copyWith(color: t.tintaSuave),
-        ),
-      ],
+          const SizedBox(height: 3),
+          Text(
+            'PTS',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w700,
+              fontSize: 9,
+              letterSpacing: 0.5,
+              color: t.tintaSuave,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

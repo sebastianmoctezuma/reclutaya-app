@@ -1,14 +1,18 @@
+import 'dart:async';
+
 // El tipo de las familias (`FutureProviderFamily`) no lo exporta flutter_riverpod 3:
 // no se puede anotar, y el genérico en la llamada ya lo deja claro.
 // ignore_for_file: specify_nonobvious_property_types
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/ficha_candidato.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/inicio.dart';
+import 'package:reclutaya_app/funciones/negocio/comun/modelos/novedades.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/ranking.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/sucursales.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/vacantes.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/yo.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/repositorio_negocio.dart';
+import 'package:reclutaya_app/nucleo/almacen/almacen_local.dart';
 import 'package:reclutaya_app/nucleo/sesion/providers.dart';
 import 'package:reclutaya_app/nucleo/util/resultado.dart';
 
@@ -57,6 +61,43 @@ final filtroSucursalProvider = NotifierProvider<FiltroSucursal, String?>(
   FiltroSucursal.new,
 );
 
+/// Las novedades de la última semana (la campana decide cuáles son nuevas).
+final novedadesProvider = FutureProvider<Novedades>(
+  (ref) async =>
+      (await ref
+              .watch(repositorioProvider)
+              .novedades(
+                desde: DateTime.now().subtract(const Duration(days: 7)),
+              ))
+          .valorOLanza,
+);
+
+const _llaveVistoHasta = 'ry_novedades_visto_hasta';
+
+/// Hasta cuándo vio el dueño las novedades, guardado en el teléfono.
+class VistoHasta extends AsyncNotifier<DateTime?> {
+  @override
+  Future<DateTime?> build() async {
+    final v = await ref.watch(almacenLocalProvider).leer(_llaveVistoHasta);
+    return v == null ? null : DateTime.tryParse(v);
+  }
+
+  Future<void> marcar(DateTime hasta) async {
+    state = AsyncData(hasta);
+    await ref
+        .read(almacenLocalProvider)
+        .guardar(_llaveVistoHasta, hasta.toUtc().toIso8601String());
+  }
+
+  /// Al cerrar sesión: la cuenta siguiente empieza de cero.
+  Future<void> olvidar() =>
+      ref.read(almacenLocalProvider).borrar(_llaveVistoHasta);
+}
+
+final vistoHastaProvider = AsyncNotifierProvider<VistoHasta, DateTime?>(
+  VistoHasta.new,
+);
+
 final vacantesCerradasProvider = FutureProvider<List<VacanteCerrada>>(
   (ref) async =>
       (await ref.watch(repositorioProvider).vacantesCerradas()).valorOLanza,
@@ -80,24 +121,40 @@ final candidatoProvider = FutureProvider.autoDispose
           (await ref.watch(repositorioProvider).candidato(id)).valorOLanza,
     );
 
-/// Al cerrar sesión (voluntaria o vencida): no queda NADA en memoria de la
-/// cuenta anterior. Vive en el contenedor, no en una pantalla: la pantalla que
-/// pide salir se desmonta antes de que termine `salir()`. `App` lo observa.
-/// Si la salida fue por vencimiento, deja el aviso para Entrar.
+/// Al cerrar sesión Y al entrar: no queda NADA en memoria de otra cuenta. Se limpia
+/// también al ENTRAR porque, al salir, las pantallas aún montadas vuelven a pedir sus
+/// datos sin sesión y ese error se quedaba guardado para la cuenta siguiente (6-oct).
+/// Vive en el contenedor, no en una pantalla. `App` lo observa. Si la salida fue por
+/// vencimiento, deja el aviso para Entrar.
 final limpiezaSesionProvider = Provider<void>((ref) {
-  ref.listen(autenticadoProvider, (_, siguiente) {
-    if (siguiente.value != false) return;
+  ref.listen(autenticadoProvider, (anterior, siguiente) {
+    final antes = anterior?.value;
+    final ahora = siguiente.value;
+    if (ahora == null || antes == ahora) return;
+    // Al entrar solo hace falta si antes hubo una salida (no en el primer arranque).
+    if (ahora && antes == null) return;
     ref
       ..invalidate(yoProvider)
       ..invalidate(inicioProvider)
       ..invalidate(vacantesActivasProvider)
       ..invalidate(vacantesCerradasProvider)
       ..invalidate(sucursalesProvider)
+      ..invalidate(novedadesProvider)
       ..invalidate(filtroSucursalProvider)
       ..invalidate(vacanteProvider)
       ..invalidate(rankingProvider)
       ..invalidate(candidatoProvider);
-    if (ref.read(sesionProvider).consumirVencimiento()) {
+    if (ahora) {
+      ref.invalidate(vistoHastaProvider);
+    } else {
+      unawaited(
+        ref
+            .read(vistoHastaProvider.notifier)
+            .olvidar()
+            .whenComplete(() => ref.invalidate(vistoHastaProvider)),
+      );
+    }
+    if (!ahora && ref.read(sesionProvider).consumirVencimiento()) {
       ref.read(avisoAccesoProvider.notifier).aviso =
           'Tu sesión terminó. Vuelve a entrar.';
     }

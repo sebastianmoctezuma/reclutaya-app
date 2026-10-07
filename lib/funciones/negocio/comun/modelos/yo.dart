@@ -6,7 +6,12 @@ part 'yo.g.dart';
 /// conocen (agregar campos es compatible) y solo exigen los obligatorios.
 @JsonSerializable(createToJson: false)
 class EmpresaYo {
-  const EmpresaYo({required this.nombre, this.logoUrl, this.logoFit});
+  const EmpresaYo({
+    required this.nombre,
+    this.logoUrl,
+    this.logoFit,
+    this.plan,
+  });
 
   factory EmpresaYo.fromJson(Map<String, dynamic> json) =>
       _$EmpresaYoFromJson(json);
@@ -14,6 +19,10 @@ class EmpresaYo {
   final String nombre;
   final String? logoUrl;
   final String? logoFit;
+
+  /// El nombre del plan (Esencial · Básico · Pro · Ilimitada · Gratis), con la regla de
+  /// la página de Pagos. null con un servidor anterior.
+  final String? plan;
 }
 
 @JsonSerializable(createToJson: false)

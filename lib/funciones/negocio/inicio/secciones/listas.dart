@@ -225,12 +225,7 @@ class Proceso extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
                 children: [
-                  Tesela(
-                    icono: icono,
-                    color: t.verdeProfundo,
-                    fondo: t.verdeBrillo,
-                    tam: 28,
-                  ),
+                  Tesela(icono: icono, color: t.verdeProfundo, tam: 28),
                   const SizedBox(width: 10),
                   SizedBox(
                     width: 104,
@@ -332,7 +327,6 @@ class _ActividadState extends State<Actividad> {
                 _ => Icons.description_outlined,
               },
               color: e.tipo == 'test' ? t.naranjaProfundo : t.azul,
-              fondo: e.tipo == 'test' ? t.naranjaBrillo : t.azulBrillo,
             ),
             hijo: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,12 +395,7 @@ class VacantesEnCurso extends StatelessWidget {
       return Tarjeta(
         child: Row(
           children: [
-            Tesela(
-              icono: Icons.add_rounded,
-              color: t.naranjaProfundo,
-              fondo: t.naranjaBrillo,
-              tam: 40,
-            ),
+            Tesela(icono: Icons.add_rounded, color: t.naranjaProfundo, tam: 40),
             const SizedBox(width: 14),
             Expanded(
               child: Text(

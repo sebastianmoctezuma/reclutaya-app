@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/presentacion.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
+import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
 
 /// El logo de una sucursal (su imagen pública) o su inicial sobre su color.
 class LogoSucursal extends StatelessWidget {
@@ -83,37 +84,29 @@ class SuperficieSucursal extends StatelessWidget {
     final t = context.t;
     final color = colorSucursal(colorIdx, oscuro: t.esOscuro);
     final forma = formaTarjeta(radioGrande);
-    return DecoratedBox(
-      decoration: ShapeDecoration(shape: forma, shadows: sombraSm(t)),
-      child: Material(
-        shape: forma.copyWith(
-          side: BorderSide(color: color.withValues(alpha: 0.22)),
+    // El mismo vidrio de las tarjetas, con la mancha de luz del color de la sucursal.
+    return SuperficieVidrio(
+      forma: forma,
+      decoracion: BoxDecoration(
+        gradient: RadialGradient(
+          center: const Alignment(0.95, -0.35),
+          radius: 1.05,
+          colors: [
+            color.withValues(alpha: t.esOscuro ? 0.34 : 0.22),
+            color.withValues(alpha: t.esOscuro ? 0.12 : 0.07),
+            color.withValues(alpha: 0),
+          ],
+          stops: const [0, 0.45, 1],
         ),
-        clipBehavior: Clip.antiAlias,
-        color: t.tarjeta,
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: const Alignment(0.95, -0.35),
-              radius: 1.05,
-              colors: [
-                color.withValues(alpha: t.esOscuro ? 0.30 : 0.22),
-                color.withValues(alpha: t.esOscuro ? 0.10 : 0.07),
-                color.withValues(alpha: 0),
-              ],
-              stops: const [0, 0.45, 1],
-            ),
-          ),
-          child: InkWell(
-            onTap: alTocar == null
-                ? null
-                : () {
-                    hapticoSeleccion();
-                    alTocar!();
-                  },
-            child: Padding(padding: padding, child: child),
-          ),
-        ),
+      ),
+      child: InkWell(
+        onTap: alTocar == null
+            ? null
+            : () {
+                hapticoSeleccion();
+                alTocar!();
+              },
+        child: Padding(padding: padding, child: child),
       ),
     );
   }

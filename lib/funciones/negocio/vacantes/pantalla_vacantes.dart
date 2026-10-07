@@ -7,7 +7,6 @@ import 'package:reclutaya_app/funciones/negocio/vacantes/fila_vacante.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/por_sucursal.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
-import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 import 'package:reclutaya_app/nucleo/ui/estados.dart';
 import 'package:reclutaya_app/nucleo/vidrio/segmentado.dart';
 
@@ -50,11 +49,11 @@ class _PantallaVacantesState extends ConsumerState<PantallaVacantes> {
         _elegida ?? (multi ? EstadoLista.sucursales : EstadoLista.activas);
     if (!multi && lista == EstadoLista.sucursales) lista = EstadoLista.activas;
     return PaginaConTitulo(
-      titulo: nombrePestanaVacantes(variasSucursales: multi),
+      // Con varias sucursales el selector ya dice dónde estás: sin título arriba.
+      titulo: multi ? '' : nombrePestanaVacantes(variasSucursales: multi),
       alRefrescar: () => _refrescar(lista),
       slivers: [
         SliverPersistentHeader(
-          pinned: true,
           delegate: _Pegado(
             alto: MediaQuery.textScalerOf(context).scale(58),
             hijo: Segmentado<EstadoLista>(
@@ -200,10 +199,8 @@ class _Pegado extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlaps) {
-    return ColoredBox(
-      color: context.t.papel,
-      child: Center(child: hijo),
-    );
+    // Sin fondo propio: el segmentado de vidrio flota sobre el degradado y la lista.
+    return Center(child: hijo);
   }
 
   @override

@@ -115,6 +115,8 @@ class FichaCandidato {
     this.test = const Test(),
     this.respuestas = const [],
     this.extras = const [],
+    this.razones = const [],
+    this.fase,
   });
 
   factory FichaCandidato.fromJson(Map<String, dynamic> json) =>
@@ -145,4 +147,11 @@ class FichaCandidato {
   final List<Respuesta> respuestas;
   @JsonKey(defaultValue: <Respuesta>[])
   final List<Respuesta> extras;
+
+  /// La ficha de la IA en renglones (6-oct). Con un servidor anterior, vacía.
+  @JsonKey(defaultValue: <String>[])
+  final List<String> razones;
+
+  /// La misma fase del chip del ranking. null con un servidor anterior.
+  final String? fase;
 }

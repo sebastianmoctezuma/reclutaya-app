@@ -10,6 +10,7 @@ EmpresaYo _$EmpresaYoFromJson(Map<String, dynamic> json) => EmpresaYo(
   nombre: json['nombre'] as String,
   logoUrl: json['logoUrl'] as String?,
   logoFit: json['logoFit'] as String?,
+  plan: json['plan'] as String?,
 );
 
 Yo _$YoFromJson(Map<String, dynamic> json) => Yo(

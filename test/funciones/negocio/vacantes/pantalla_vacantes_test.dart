@@ -84,9 +84,11 @@ void main() {
       expect(find.text('Principal'), findsOneWidget);
       expect(find.text('Privada Ninguno 447, Reynosa'), findsOneWidget);
       expect(find.text('1 vacante · 1 miembro'), findsOneWidget);
-      expect(find.text('ST'), findsOneWidget);
+      expect(find.text('ST'), findsWidgets);
       expect(find.text('Altomar'), findsOneWidget);
-      expect(find.text('Ver equipo · 2'), findsOneWidget);
+      expect(find.text('Tu equipo'), findsOneWidget);
+      expect(find.text('2 personas'), findsOneWidget);
+      expect(find.text('2 candidatos sin ranking'), findsOneWidget);
       for (final accion in ['Crear sucursal', 'Invitar', 'Agregar sucursal']) {
         expect(find.text(accion), findsNothing, reason: accion);
       }
@@ -113,7 +115,7 @@ void main() {
       tester,
     ) async {
       await abrir(tester);
-      await tester.tap(find.text('Ver equipo · 2'));
+      await tester.tap(find.text('Tu equipo'));
       await tester.pumpAndSettle();
       expect(find.text('Antonio Pimentel'), findsOneWidget);
       expect(find.text('Dueño'), findsOneWidget);

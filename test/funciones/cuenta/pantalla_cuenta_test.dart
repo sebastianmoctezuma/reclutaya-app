@@ -25,9 +25,10 @@ void main() {
     comoTelefono(tester);
     await tester.pumpWidget(_app(SesionFalsa()));
     await tester.pumpAndSettle();
-    expect(find.text(yoNegocio.nombre!), findsOneWidget);
-    expect(find.text('Dueño'), findsOneWidget);
+    // El negocio arriba y, debajo, quién entró con su rol.
+    expect(find.text('${yoNegocio.nombre!} · Dueño'), findsOneWidget);
     expect(find.text(yoNegocio.empresa!.nombre), findsOneWidget);
+    expect(find.text('Plan Pro'), findsOneWidget);
     expect(find.text('Cerrar sesión'), findsOneWidget);
   });
 

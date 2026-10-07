@@ -29,7 +29,7 @@ void main() {
       expect(find.bySemanticsLabel(RegExp('Apellido oculto')), findsOneWidget);
       expect(find.textContaining('52'), findsNothing);
       expect(find.text('87'), findsOneWidget);
-      expect(find.text('pts'), findsOneWidget);
+      expect(find.text('PTS'), findsOneWidget);
       expect(find.text('Cumple 3 de 4'), findsOneWidget);
       expect(find.text('~20 min'), findsOneWidget);
       expect(find.text('Buena actitud'), findsOneWidget);

@@ -12,6 +12,7 @@ import 'package:reclutaya_app/funciones/negocio/inicio/secciones/filtro_sucursal
 import 'package:reclutaya_app/funciones/negocio/inicio/secciones/listas.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/secciones/vistazo.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/tarjetas_indicadores.dart';
+import 'package:reclutaya_app/funciones/negocio/novedades/campana.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
@@ -30,6 +31,7 @@ class PantallaInicio extends ConsumerWidget {
     ref
       ..invalidate(yoProvider)
       ..invalidate(inicioProvider)
+      ..invalidate(novedadesProvider)
       ..invalidate(vacantesActivasProvider);
     try {
       await ref.read(inicioProvider.future);
@@ -44,6 +46,7 @@ class PantallaInicio extends ConsumerWidget {
     final inicio = ref.watch(inicioProvider);
     return PaginaConTitulo(
       titulo: 'Inicio',
+      accion: const CampanaNovedades(),
       alRefrescar: () => _refrescar(ref),
       slivers: [
         if (inicio.hasValue && inicio.error is SinRed)
@@ -90,10 +93,14 @@ class PantallaInicio extends ConsumerWidget {
     final embudo = i.proceso?.total;
     final actividad = i.actividad;
     return [
+      // Sin título: la primera tarjeta va sobre el verde, como el saldo en las apps
+      // de banca.
       if (Vistazo.hayAlgo(i.resumen, i.saldo))
-        SliverSeccion(
-          titulo: 'De un vistazo',
-          hijo: Vistazo(resumen: i.resumen, saldo: i.saldo),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+          sliver: SliverToBoxAdapter(
+            child: Vistazo(resumen: i.resumen, saldo: i.saldo),
+          ),
         ),
       _Indicadores(inicio: i),
       if (consumo != null && sucursales.isNotEmpty)
@@ -146,10 +153,8 @@ class _Encabezado extends StatelessWidget {
   Widget build(BuildContext context) {
     final nombre = negocio?.nombre ?? yo?.empresa?.nombre;
     if (nombre == null) return const Esqueleto(alto: 100, radio: radioGrande);
-    final pila = yo?.nombre?.trim().split(RegExp(r'\s+')).first ?? '';
     return EncabezadoNegocio(
       nombre: nombre,
-      saludo: pila.isEmpty ? 'Hola' : 'Hola, $pila',
       meta: negocio?.meta ?? '',
       logoUrl: negocio?.logoUrl ?? yo?.empresa?.logoUrl,
       logoFit: negocio?.logoFit ?? yo?.empresa?.logoFit,

@@ -1,5 +1,6 @@
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/ficha_candidato.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/inicio.dart';
+import 'package:reclutaya_app/funciones/negocio/comun/modelos/novedades.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/ranking.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/sucursales.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/vacantes.dart';
@@ -18,6 +19,7 @@ abstract class RepositorioNegocio {
   Future<Resultado<Ranking>> ranking(String slug);
   Future<Resultado<FichaCandidato>> candidato(String postulacionId);
   Future<Resultado<Sucursales>> sucursales();
+  Future<Resultado<Novedades>> novedades({DateTime? desde});
 }
 
 class RepositorioNegocioApi implements RepositorioNegocio {
@@ -64,6 +66,15 @@ class RepositorioNegocioApi implements RepositorioNegocio {
   @override
   Future<Resultado<Sucursales>> sucursales() async =>
       parsear(await _api.get('/negocio/sucursales'), Sucursales.fromJson);
+
+  @override
+  Future<Resultado<Novedades>> novedades({DateTime? desde}) async => parsear(
+    await _api.get(
+      '/negocio/novedades',
+      query: {if (desde != null) 'desde': desde.toUtc().toIso8601String()},
+    ),
+    Novedades.fromJson,
+  );
 
   @override
   Future<Resultado<FichaCandidato>> candidato(String postulacionId) async =>

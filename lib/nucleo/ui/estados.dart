@@ -13,11 +13,16 @@ class EstadoVacio extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
+    final tinta = context.t.tinta;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
       child: Column(
         children: [
-          Text(titulo, style: tt.titleLarge, textAlign: TextAlign.center),
+          Text(
+            titulo,
+            style: tt.titleLarge!.copyWith(color: tinta),
+            textAlign: TextAlign.center,
+          ),
           if (texto != null) ...[
             const SizedBox(height: 8),
             Text(texto!, style: tt.bodySmall, textAlign: TextAlign.center),

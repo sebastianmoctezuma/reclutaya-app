@@ -5,6 +5,7 @@ import 'package:reclutaya_app/funciones/negocio/comun/modelos/inicio.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/yo.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/pantalla_inicio.dart';
+import 'package:reclutaya_app/nucleo/almacen/almacen_local.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
 import 'package:reclutaya_app/nucleo/tema/tema.dart';
 import 'package:reclutaya_app/nucleo/ui/estados.dart';
@@ -14,8 +15,11 @@ import '../../../apoyo/datos.dart';
 import '../../../apoyo/repositorio_falso.dart';
 import '../../../apoyo/telefono.dart';
 
-Widget _app(RepositorioFalso r) => ProviderScope(
-  overrides: [repositorioProvider.overrideWithValue(r)],
+Widget _app(RepositorioFalso r, {AlmacenMemoria? almacen}) => ProviderScope(
+  overrides: [
+    repositorioProvider.overrideWithValue(r),
+    almacenLocalProvider.overrideWithValue(almacen ?? AlmacenMemoria()),
+  ],
   retry: sinReintentos,
   child: MaterialApp(theme: temaClaro(), home: const PantallaInicio()),
 );
@@ -38,7 +42,6 @@ void main() {
         find.text('Restaurante o bar · Reynosa, Tamaulipas'),
         findsOneWidget,
       );
-      expect(find.text('De un vistazo'), findsOneWidget);
       expect(find.text('Vacantes abiertas'), findsOneWidget);
       expect(find.text('∞'), findsOneWidget);
       for (final titulo in [
@@ -165,7 +168,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('De un vistazo'), findsOneWidget);
+    expect(find.text('Vacantes abiertas'), findsOneWidget);
   });
 
   testWidgets('sin vacantes activas invita a publicar desde la web', (
@@ -182,7 +185,7 @@ void main() {
     expect(find.textContaining('Publica tu primera vacante'), findsOneWidget);
   });
 
-  testWidgets('sin nombre capturado saluda sin nombre', (tester) async {
+  testWidgets('el encabezado muestra el negocio, sin saludo', (tester) async {
     comoTelefono(tester);
     final r = RepositorioFalso()
       ..yoR = const Exito(
@@ -196,6 +199,23 @@ void main() {
     await tester.pumpWidget(_app(r));
     await tester.pumpAndSettle();
     expect(find.text('Punto Chilango'), findsOneWidget);
-    expect(find.text('Hola'), findsOneWidget);
+    expect(find.textContaining('Hola'), findsNothing);
   });
+
+  testWidgets(
+    'la campana cuenta lo nuevo y, al abrirla, lo muestra y lo da por visto',
+    (tester) async {
+      comoTelefono(tester);
+      final almacen = AlmacenMemoria();
+      await tester.pumpWidget(_app(RepositorioFalso(), almacen: almacen));
+      await tester.pumpAndSettle();
+      expect(find.text('2'), findsOneWidget, reason: 'insignia con las nuevas');
+      await tester.tap(find.bySemanticsLabel(RegExp('Novedades')));
+      await tester.pumpAndSettle();
+      expect(find.text('Novedades'), findsOneWidget);
+      expect(find.text('Luis P. mandó su video'), findsOneWidget);
+      expect(find.text('Ana P. se postuló'), findsOneWidget);
+      expect(almacen.datos.values, isNotEmpty, reason: 'guarda el visto hasta');
+    },
+  );
 }

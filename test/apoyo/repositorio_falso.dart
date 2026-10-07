@@ -1,5 +1,6 @@
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/ficha_candidato.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/inicio.dart';
+import 'package:reclutaya_app/funciones/negocio/comun/modelos/novedades.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/ranking.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/sucursales.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/vacantes.dart';
@@ -21,6 +22,32 @@ class RepositorioFalso implements RepositorioNegocio {
   Resultado<FichaCandidato> candidatoR = const Exito(fichaCandidatoContactada);
   Resultado<Sucursales> sucursalesR = const Exito(
     Sucursales(multisucursal: false),
+  );
+  Resultado<Novedades> novedadesR = Exito(
+    Novedades(
+      hasta: DateTime.utc(2026, 10, 6, 18),
+      items: [
+        Novedad(
+          tipo: 'video',
+          at: DateTime.utc(2026, 10, 6, 17),
+          candidato: 'Luis P.',
+          accion: 'mandó su video',
+          puesto: 'Mesero',
+          slug: 'mesero-abc',
+          postulacionId: 'p2',
+        ),
+        Novedad(
+          tipo: 'postulacion',
+          at: DateTime.utc(2026, 10, 6, 12),
+          candidato: 'Ana P.',
+          accion: 'se postuló',
+          puesto: 'Mesero',
+          sucursal: 'Centro',
+          slug: 'mesero-abc',
+          postulacionId: 'p1',
+        ),
+      ],
+    ),
   );
   int llamadasCandidato = 0;
   int llamadasRanking = 0;
@@ -62,6 +89,9 @@ class RepositorioFalso implements RepositorioNegocio {
 
   @override
   Future<Resultado<Sucursales>> sucursales() => _r(sucursalesR);
+
+  @override
+  Future<Resultado<Novedades>> novedades({DateTime? desde}) => _r(novedadesR);
 
   @override
   Future<Resultado<FichaCandidato>> candidato(String postulacionId) {

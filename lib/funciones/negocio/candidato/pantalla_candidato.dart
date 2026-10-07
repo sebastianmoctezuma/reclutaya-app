@@ -6,16 +6,15 @@ import 'package:reclutaya_app/funciones/negocio/candidato/bloque_test.dart';
 import 'package:reclutaya_app/funciones/negocio/candidato/bloque_video.dart';
 import 'package:reclutaya_app/funciones/negocio/candidato/controlador_ficha.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/ficha_candidato.dart';
-import 'package:reclutaya_app/funciones/negocio/comun/presentacion.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
-import 'package:reclutaya_app/nucleo/ui/avatar_iniciales.dart';
 import 'package:reclutaya_app/nucleo/ui/chip.dart';
 import 'package:reclutaya_app/nucleo/ui/esqueleto.dart';
 import 'package:reclutaya_app/nucleo/ui/estados.dart';
 import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
+import 'package:reclutaya_app/nucleo/ui/tesela.dart';
 import 'package:reclutaya_app/nucleo/util/formato.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -57,7 +56,8 @@ class _PantallaCandidatoState extends ConsumerState<PantallaCandidato> {
     final id = widget.postulacionId;
     final ficha = ref.watch(candidatoProvider(id));
     return PaginaConTitulo(
-      titulo: ficha.value?.nombre ?? 'Candidato',
+      // El nombre va UNA vez, en el encabezado de la ficha.
+      titulo: 'Candidato',
       alRefrescar: () async {
         ref.invalidate(candidatoProvider(id));
         try {
@@ -101,111 +101,203 @@ class _PantallaCandidatoState extends ConsumerState<PantallaCandidato> {
   List<Widget> _cuerpo(BuildContext context, FichaCandidato f) {
     final t = context.t;
     final tt = Theme.of(context).textTheme;
-    final zona = [
-      if (f.zona != null) f.zona!,
-      if (f.minutosTraslado != null) textoTraslado(f.minutosTraslado),
-    ].join(' · ');
-    final datos = <(String, Widget)>[
-      if (f.whatsapp != null)
-        (
-          'WhatsApp',
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Flexible(child: Text(f.whatsapp!, style: tt.labelLarge)),
-              const SizedBox(width: 10),
-              _Copiar(f.whatsapp!),
-            ],
-          ),
-        ),
-      if (zona.isNotEmpty) ('Zona', Text(zona, style: tt.labelLarge)),
-      (
-        'Experiencia',
-        Text(experiencia(f.experienciaMeses), style: tt.labelLarge),
+    final fase = switch (f.fase) {
+      'contratado' => const ChipRY('Contratado', tono: TonoChip.verde),
+      'no_respondio' => const ChipRY('No respondió', tono: TonoChip.naranja),
+      'en_proceso' => const ChipRY('En proceso', tono: TonoChip.azul),
+      'sin_iniciar' when f.contactado => const ChipRY(
+        'Contactado',
+        tono: TonoChip.azul,
       ),
-      if (f.turnoDisponible != null)
-        ('Turno', Text(f.turnoDisponible!, style: tt.labelLarge)),
-      if (f.sueldoEsperado != null)
-        ('Sueldo esperado', Text(f.sueldoEsperado!, style: tt.labelLarge)),
-    ];
+      null when f.contratado => const ChipRY(
+        'Contratado',
+        tono: TonoChip.verde,
+      ),
+      null when f.noRespondio => const ChipRY(
+        'No respondió',
+        tono: TonoChip.naranja,
+      ),
+      null when f.contactado => const ChipRY('Contactado', tono: TonoChip.azul),
+      _ => null,
+    };
     final chips = <Widget>[
-      if (f.contactado) const ChipRY('Contactado', tono: TonoChip.azul),
-      if (f.noRespondio) const ChipRY('No respondió', tono: TonoChip.naranja),
-      if (f.contratado) const ChipRY('Contratado', tono: TonoChip.verde),
-      if (f.fechaLimite != null && !f.contratado)
+      ?fase,
+      if (f.fechaLimite != null && !f.contratado && f.fase != 'no_respondio')
         ChipRY('Vence ${fechaCorta(f.fechaLimite!)}'),
       if (f.entregaFallo == 'sin_whatsapp')
         const ChipRY('Sin WhatsApp', tono: TonoChip.rojo),
     ];
+    final razones = f.razones.isNotEmpty
+        ? f.razones
+        : [if (f.resumen != null && f.resumen!.trim().isNotEmpty) f.resumen!];
+    final datos = <Widget>[
+      if (f.whatsapp != null)
+        _Dato(
+          tesela: Tesela(icono: Icons.phone_rounded, color: t.verde),
+          etiqueta: 'WhatsApp',
+          valor: f.whatsapp!,
+          extra: _Copiar(f.whatsapp!),
+        ),
+      if (f.zona != null)
+        _Dato(
+          tesela: Tesela(icono: Icons.place_rounded, color: t.azul),
+          etiqueta: 'Zona',
+          valor: f.zona!,
+        ),
+      if (f.minutosTraslado != null)
+        _Dato(
+          tesela: Tesela(icono: Icons.directions_car_rounded, color: t.azul),
+          etiqueta: 'Traslado',
+          valor: '~${f.minutosTraslado} min en auto',
+        ),
+      _Dato(
+        tesela: Tesela(icono: Icons.work_rounded, color: t.naranja),
+        etiqueta: 'Experiencia',
+        valor: experiencia(f.experienciaMeses),
+      ),
+      if (f.turnoDisponible != null)
+        _Dato(
+          tesela: Tesela(icono: Icons.schedule_rounded, color: t.verdeProfundo),
+          etiqueta: 'Turno',
+          valor: f.turnoDisponible!,
+        ),
+      if (f.sueldoEsperado != null)
+        _Dato(
+          tesela: Tesela(icono: Icons.payments_rounded, color: t.verde),
+          etiqueta: 'Sueldo esperado',
+          valor: f.sueldoEsperado!,
+        ),
+    ];
+    String estadoDe(Entregable e) => e.recibido
+        ? 'Recibido'
+        : e.solicitado
+        ? 'Pedido'
+        : 'Sin pedir';
+    final estadoTest = switch (f.test.estado) {
+      'RESPONDIDA' => 'Respondido',
+      'NO_ENVIADA' => 'Sin enviar',
+      _ => 'Enviado',
+    };
     return [
-      Row(
+      // Encabezado como el de Contactos de iOS: iniciales, nombre una vez, puntos y fase.
+      Column(
         children: [
-          AvatarIniciales(_iniciales(f.nombre), tam: 52),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  f.nombre,
-                  style: tt.titleLarge,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (chips.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Wrap(spacing: 6, runSpacing: 6, children: chips),
-                ],
-              ],
+          Container(
+            width: 76,
+            height: 76,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: t.sobreVerde,
+              boxShadow: sombraMd(t),
+            ),
+            child: Text(
+              _iniciales(f.nombre),
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w700,
+                fontSize: 28,
+                color: t.verdeProfundo,
+              ),
             ),
           ),
-          const SizedBox(width: 8),
-          if (f.score != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: t.verdeBrillo,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                '${f.score!.round()} pts',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                  color: t.verdeProfundo,
-                ),
+          const SizedBox(height: 12),
+          // Directo sobre el verde del fondo: en blanco.
+          Text(
+            f.nombre,
+            textAlign: TextAlign.center,
+            style: tt.headlineSmall!.copyWith(color: t.sobreVerde),
+          ),
+          if (f.score != null) ...[
+            const SizedBox(height: 4),
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '${f.score!.round()}',
+                    style: tt.titleLarge!.copyWith(color: t.sobreVerde),
+                  ),
+                  TextSpan(
+                    text: ' pts',
+                    style: tt.bodySmall!.copyWith(
+                      color: t.sobreVerde.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ],
               ),
             ),
+          ],
+          if (chips.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 6,
+              runSpacing: 6,
+              children: chips,
+            ),
+          ],
         ],
       ),
-      const SizedBox(height: 16),
-      if (f.resumen != null && f.resumen!.trim().isNotEmpty) ...[
+      const SizedBox(height: 22),
+      if (razones.isNotEmpty) ...[
         _Seccion(
-          'Resumen',
-          Text(f.resumen!, style: tt.bodyMedium!.copyWith(height: 1.6)),
+          titulo: 'Por qué está en el ranking',
+          tesela: Tesela(icono: Icons.auto_awesome_rounded, color: t.verde),
+          hijo: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final r in razones)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Icon(
+                          Icons.check_circle_rounded,
+                          size: 16,
+                          color: t.verde,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(r, style: tt.bodyMedium)),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
       ],
+      _Grupo(renglones: datos),
+      const SizedBox(height: 12),
       _Seccion(
-        'Datos',
-        Column(children: [for (final (k, v) in datos) _Fila(k, v)]),
+        titulo: 'Video',
+        tesela: Tesela(icono: Icons.videocam_rounded, color: t.azul),
+        estado: estadoDe(f.video),
+        recibido: f.video.recibido,
+        hijo: BloqueVideo(video: f.video, alFallarUrl: _urlFallo),
       ),
       const SizedBox(height: 12),
-      _Seccion('Video', BloqueVideo(video: f.video, alFallarUrl: _urlFallo)),
-      const SizedBox(height: 12),
       _Seccion(
-        'Documento',
-        f.documento.url != null
+        titulo: 'Documento',
+        tesela: Tesela(
+          icono: Icons.description_rounded,
+          color: t.verdeProfundo,
+        ),
+        estado: estadoDe(f.documento),
+        recibido: f.documento.recibido,
+        hijo: f.documento.url != null
             ? Align(
                 alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
+                child: FilledButton.tonalIcon(
                   onPressed: () => _abrir(f.documento.url!),
-                  icon: const Icon(Icons.description_outlined, size: 18),
-                  label: const Text('Abrir'),
-                  style: OutlinedButton.styleFrom(
+                  icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                  label: const Text('Abrir documento'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: t.verdeBrillo,
                     foregroundColor: t.verdeProfundo,
-                    side: BorderSide(color: t.lineaFuerte),
                     shape: const StadiumBorder(),
                   ),
                 ),
@@ -218,19 +310,30 @@ class _PantallaCandidatoState extends ConsumerState<PantallaCandidato> {
               ),
       ),
       const SizedBox(height: 12),
-      _Seccion('Test de compatibilidad', BloqueTest(test: f.test)),
+      _Seccion(
+        titulo: 'Test de compatibilidad',
+        tesela: Tesela(icono: Icons.donut_large_rounded, color: t.naranja),
+        estado: estadoTest,
+        recibido: f.test.estado == 'RESPONDIDA',
+        hijo: BloqueTest(test: f.test),
+      ),
       if (f.respuestas.isNotEmpty) ...[
         const SizedBox(height: 12),
         _Seccion(
-          'Respuestas',
-          Column(children: [for (final r in f.respuestas) _Respuesta(r)]),
+          titulo: 'Respuestas del formulario',
+          tesela: Tesela(
+            icono: Icons.checklist_rounded,
+            color: t.verdeProfundo,
+          ),
+          hijo: _Respuestas(f.respuestas),
         ),
       ],
       if (f.extras.isNotEmpty) ...[
         const SizedBox(height: 12),
         _Seccion(
-          'Datos adicionales',
-          Column(children: [for (final r in f.extras) _Respuesta(r)]),
+          titulo: 'Datos adicionales',
+          tesela: Tesela(icono: Icons.badge_rounded, color: t.azul),
+          hijo: _Respuestas(f.extras),
         ),
       ],
     ];
@@ -248,19 +351,46 @@ class _PantallaCandidatoState extends ConsumerState<PantallaCandidato> {
   }
 }
 
+/// Una tarjeta de la ficha: el cuadro de ícono, el título y, a la derecha, en qué va
+/// (Recibido · Pedido · Sin pedir).
 class _Seccion extends StatelessWidget {
-  const _Seccion(this.titulo, this.hijo);
+  const _Seccion({
+    required this.titulo,
+    required this.tesela,
+    required this.hijo,
+    this.estado,
+    this.recibido = false,
+  });
 
   final String titulo;
+  final Widget tesela;
   final Widget hijo;
+  final String? estado;
+  final bool recibido;
 
   @override
   Widget build(BuildContext context) {
+    final t = context.t;
+    final tt = Theme.of(context).textTheme;
     return Tarjeta(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(titulo, style: Theme.of(context).textTheme.titleMedium),
+          Row(
+            children: [
+              tesela,
+              const SizedBox(width: 10),
+              Expanded(child: Text(titulo, style: tt.titleMedium)),
+              if (estado != null)
+                Text(
+                  estado!,
+                  style: tt.labelMedium!.copyWith(
+                    color: recibido ? t.verdeProfundo : t.tintaSuave,
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(height: 10),
           hijo,
         ],
@@ -269,30 +399,63 @@ class _Seccion extends StatelessWidget {
   }
 }
 
-class _Fila extends StatelessWidget {
-  const _Fila(this.k, this.v);
+/// Los datos del candidato como lista agrupada de iOS: ícono, etiqueta chica y el
+/// valor debajo (las zonas largas no se amontonan a la derecha).
+class _Grupo extends StatelessWidget {
+  const _Grupo({required this.renglones});
 
-  final String k;
-  final Widget v;
+  final List<Widget> renglones;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: t.linea)),
+    return Tarjeta(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        children: [
+          for (final (i, r) in renglones.indexed) ...[
+            if (i > 0) Divider(height: 1, indent: 58, color: t.linea),
+            r,
+          ],
+        ],
       ),
+    );
+  }
+}
+
+class _Dato extends StatelessWidget {
+  const _Dato({
+    required this.tesela,
+    required this.etiqueta,
+    required this.valor,
+    this.extra,
+  });
+
+  final Widget tesela;
+  final String etiqueta;
+  final String valor;
+  final Widget? extra;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 11, 14, 11),
       child: Row(
         children: [
+          tesela,
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(k, style: Theme.of(context).textTheme.bodySmall),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(etiqueta, style: tt.bodySmall),
+                const SizedBox(height: 1),
+                Text(valor, style: tt.labelLarge),
+              ],
+            ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 2,
-            child: Align(alignment: Alignment.centerRight, child: v),
-          ),
+          if (extra != null) ...[const SizedBox(width: 8), extra!],
         ],
       ),
     );
@@ -337,39 +500,50 @@ class _Copiar extends StatelessWidget {
   }
 }
 
-class _Respuesta extends StatelessWidget {
-  const _Respuesta(this.r);
+/// Las respuestas del formulario como en la web: la pregunta en chico, la respuesta
+/// debajo y «No cumple» solo en la que le costó puntos. Todas a todo el ancho.
+class _Respuestas extends StatelessWidget {
+  const _Respuestas(this.lista);
 
-  final Respuesta r;
+  final List<Respuesta> lista;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final tt = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: t.linea)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(r.texto, style: tt.bodySmall),
-          const SizedBox(height: 3),
-          Text(r.respuesta, style: tt.labelLarge),
-          if (r.requisito || r.incumple) ...[
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 6,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (i, r) in lista.indexed)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              border: i == 0 ? null : Border(top: BorderSide(color: t.linea)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (r.requisito)
-                  const ChipRY('Requisito', tono: TonoChip.verde),
-                if (r.incumple) const ChipRY('No cumple', tono: TonoChip.rojo),
+                Text(r.texto, style: tt.bodySmall),
+                const SizedBox(height: 3),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        r.respuesta,
+                        style: r.abierta ? tt.bodyMedium : tt.labelLarge,
+                      ),
+                    ),
+                    if (r.incumple) ...[
+                      const SizedBox(width: 8),
+                      const ChipRY('No cumple', tono: TonoChip.rojo),
+                    ],
+                  ],
+                ),
               ],
             ),
-          ],
-        ],
-      ),
+          ),
+      ],
     );
   }
 }

@@ -66,6 +66,33 @@ void main() {
     },
   );
 
+  testWidgets('filtrar por material recibido deja solo a quien lo entregó', (
+    tester,
+  ) async {
+    comoTelefono(tester);
+    await tester.pumpWidget(_app(RepositorioFalso()));
+    await tester.pumpAndSettle();
+    await tester.dragUntilVisible(
+      find.text('Video · 1'),
+      lista,
+      const Offset(0, -300),
+    );
+    // Los tres siempre, como en la web, con cuántos lo tienen.
+    expect(find.text('Documento · 0'), findsOneWidget);
+    expect(find.text('Test · 1'), findsOneWidget);
+    await tester.tap(find.text('Video · 1'));
+    await tester.pumpAndSettle();
+    expect(find.text('Luis Pérez'), findsOneWidget);
+    expect(find.text('Ana'), findsNothing);
+    expect(find.text('Marta Ruiz'), findsNothing);
+    await tester.tap(find.text('Video · 1'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ana'), findsOneWidget);
+    await tester.tap(find.text('Documento · 0'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nadie con ese material todavía'), findsOneWidget);
+  });
+
   testWidgets('la descripción va plegada y se abre al tocarla', (tester) async {
     comoTelefono(tester);
     await tester.pumpWidget(_app(RepositorioFalso()));

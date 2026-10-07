@@ -14,7 +14,7 @@ const yoNegocio = Yo(
   iniciales: 'AP',
   rol: 'owner',
   veDinero: true,
-  empresa: EmpresaYo(nombre: 'Tacos Don Beto', logoFit: 'cover'),
+  empresa: EmpresaYo(nombre: 'Tacos Don Beto', logoFit: 'cover', plan: 'Pro'),
 );
 
 const yoCandidato = Yo(
@@ -144,7 +144,9 @@ const fichaCandidatoContactada = FichaCandidato(
   zona: 'Jarachina',
   minutosTraslado: 35,
   score: 81,
-  resumen: 'Experiencia en cocina rápida.',
+  resumen: 'Experiencia en cocina rápida · Vive cerca',
+  razones: ['Experiencia en cocina rápida', 'Vive cerca'],
+  fase: 'en_proceso',
   experienciaMeses: 14,
   turnoDisponible: 'Matutino',
   sueldoEsperado: r'Hasta $2,750',

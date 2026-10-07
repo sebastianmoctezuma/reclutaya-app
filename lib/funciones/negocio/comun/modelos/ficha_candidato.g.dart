@@ -90,4 +90,10 @@ FichaCandidato _$FichaCandidatoFromJson(Map<String, dynamic> json) =>
               ?.map((e) => Respuesta.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      razones:
+          (json['razones'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
+      fase: json['fase'] as String?,
     );

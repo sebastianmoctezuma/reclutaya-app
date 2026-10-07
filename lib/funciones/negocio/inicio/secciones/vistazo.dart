@@ -30,28 +30,19 @@ class Vistazo extends StatelessWidget {
           tesela: Tesela(
             icono: Icons.work_outline_rounded,
             color: t.verdeProfundo,
-            fondo: t.verdeBrillo,
           ),
           valor: numero(r.vacantesAbiertas),
           etiqueta: 'Vacantes abiertas',
         ),
       if (r != null)
         _Dato(
-          tesela: Tesela(
-            icono: Icons.person_add_alt_1_outlined,
-            color: t.azul,
-            fondo: t.azulBrillo,
-          ),
+          tesela: Tesela(icono: Icons.person_add_alt_1_outlined, color: t.azul),
           valor: numero(r.candidatosNuevos),
           etiqueta: 'Candidatos nuevos',
         ),
       if (contactos != null)
         _Dato(
-          tesela: Tesela(
-            icono: Icons.contact_phone_outlined,
-            color: t.verde,
-            fondo: t.verdeSuave,
-          ),
+          tesela: Tesela(icono: Icons.contact_phone_outlined, color: t.verde),
           valor: contactos,
           etiqueta: 'Contactos disponibles',
         ),
@@ -60,7 +51,6 @@ class Vistazo extends StatelessWidget {
           tesela: Tesela(
             icono: Icons.handshake_outlined,
             color: t.naranjaProfundo,
-            fondo: t.naranjaBrillo,
           ),
           valor: numero(r.contratacionesMes),
           etiqueta: 'Contrataciones · mes',

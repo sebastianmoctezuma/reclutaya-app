@@ -5,6 +5,7 @@ import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 import 'package:reclutaya_app/nucleo/ui/cifra.dart';
 import 'package:reclutaya_app/nucleo/ui/esqueleto.dart';
 import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
+import 'package:reclutaya_app/nucleo/ui/tesela.dart';
 
 /// Dos columnas con alto fijo que ESCALA con la letra del sistema: la
 /// etiqueta puede ocupar dos líneas y la cifra es grande; una proporción fija
@@ -111,26 +112,18 @@ class _Indicador extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final (color, fondo) = switch (tono) {
-      TonoIndicador.verde => (t.verde, t.verdeBrillo),
-      TonoIndicador.azul => (t.azul, t.azulBrillo),
-      TonoIndicador.naranja => (t.naranjaProfundo, t.naranjaBrillo),
-      TonoIndicador.profundo => (t.verdeProfundo, t.verdeSuave),
+    final color = switch (tono) {
+      TonoIndicador.verde => t.verde,
+      TonoIndicador.azul => t.azul,
+      TonoIndicador.naranja => t.naranja,
+      TonoIndicador.profundo => t.verdeProfundo,
     };
     return Tarjeta(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: fondo,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icono, size: 20, color: color),
-          ),
+          Tesela(icono: icono, color: color, tam: 38),
           const Spacer(),
           Cifra(
             valor: valor,
