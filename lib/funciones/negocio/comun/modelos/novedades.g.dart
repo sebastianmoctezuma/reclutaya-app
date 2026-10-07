@@ -9,12 +9,13 @@ part of 'novedades.dart';
 Novedad _$NovedadFromJson(Map<String, dynamic> json) => Novedad(
   tipo: json['tipo'] as String,
   at: DateTime.parse(json['at'] as String),
-  candidato: json['candidato'] as String,
   accion: json['accion'] as String,
   puesto: json['puesto'] as String,
   slug: json['slug'] as String,
-  postulacionId: json['postulacionId'] as String,
+  candidato: json['candidato'] as String?,
+  postulacionId: json['postulacionId'] as String?,
   sucursal: json['sucursal'] as String?,
+  titulo: json['titulo'] as String?,
 );
 
 Novedades _$NovedadesFromJson(Map<String, dynamic> json) => Novedades(

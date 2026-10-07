@@ -78,6 +78,25 @@ void main() {
     expect(servidor.peticiones.single.headers['Authorization'], 'Bearer abc');
   });
 
+  test(
+    'escribir manda método, cuerpo y Bearer (v2: el registro del teléfono)',
+    () async {
+      servidor.responde(200, {'ok': true});
+      final c = ClienteApi(base: base, tokens: _Tokens('abc'), dio: dio);
+      final r = await c.escribir(
+        'POST',
+        'https://x.test/api/movil/v2/dispositivos',
+        {'token': 't', 'plataforma': 'ios'},
+      );
+      expect(r, isA<Exito<Map<String, dynamic>>>());
+      final p = servidor.peticiones.single;
+      expect(p.method, 'POST');
+      expect(p.uri.toString(), 'https://x.test/api/movil/v2/dispositivos');
+      expect(p.data, {'token': 't', 'plataforma': 'ios'});
+      expect(p.headers['Authorization'], 'Bearer abc');
+    },
+  );
+
   test('tras un 401 renueva y reintenta UNA vez con el token nuevo; '
       'si vuelve 401, cierra sesión y no hay tercer intento', () async {
     servidor

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
+import 'package:reclutaya_app/funciones/negocio/novedades/controlador_avisos.dart';
 import 'package:reclutaya_app/nucleo/rutas/rutas.dart';
 import 'package:reclutaya_app/nucleo/tema/tema.dart';
 
@@ -12,7 +13,9 @@ class App extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(limpiezaSesionProvider);
+    ref
+      ..watch(limpiezaSesionProvider)
+      ..watch(avisosSesionProvider);
     return MaterialApp.router(
       title: 'ReclutaYa',
       routerConfig: ref.watch(routerProvider),

@@ -16,6 +16,32 @@ abstract final class Config {
   );
   static const String sentryDsn = String.fromEnvironment('SENTRY_DSN');
 
+  // Firebase (avisos al celular, 7-oct). Valores PÚBLICOS de la app en la consola de
+  // Firebase; sin ellos la app funciona igual, sin avisos.
+  static const String firebaseApiKey = String.fromEnvironment(
+    'FIREBASE_API_KEY',
+  );
+  static const String firebaseProjectId = String.fromEnvironment(
+    'FIREBASE_PROJECT_ID',
+  );
+  static const String firebaseSenderId = String.fromEnvironment(
+    'FIREBASE_SENDER_ID',
+  );
+  static const String firebaseAppIdIos = String.fromEnvironment(
+    'FIREBASE_APP_ID_IOS',
+  );
+  static const String firebaseAppIdAndroid = String.fromEnvironment(
+    'FIREBASE_APP_ID_ANDROID',
+  );
+
+  /// La API v2 vive junto a la v1 (solo el registro del teléfono).
+  static String get apiBaseV2 => apiBase.replaceFirst(RegExp(r'/v1$'), '/v2');
+
+  static bool get firebaseConfigurado =>
+      firebaseApiKey.isNotEmpty &&
+      firebaseProjectId.isNotEmpty &&
+      firebaseSenderId.isNotEmpty;
+
   static bool get esProduccion => sabor == 'prod';
   static bool get configurado =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;

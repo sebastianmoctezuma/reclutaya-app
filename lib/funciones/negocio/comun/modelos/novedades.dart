@@ -9,26 +9,37 @@ class Novedad {
   const Novedad({
     required this.tipo,
     required this.at,
-    required this.candidato,
     required this.accion,
     required this.puesto,
     required this.slug,
-    required this.postulacionId,
+    this.candidato,
+    this.postulacionId,
     this.sucursal,
+    this.titulo,
   });
 
   factory Novedad.fromJson(Map<String, dynamic> json) =>
       _$NovedadFromJson(json);
 
-  /// `postulacion` · `video` · `documento` · `test`.
+  /// `postulacion` · `video` · `documento` · `test` · `ranking` (7-oct).
   final String tipo;
   final DateTime at;
-  final String candidato;
+
+  /// null en el ranking listo (no es de un candidato).
+  final String? candidato;
   final String accion;
   final String puesto;
+
+  /// Siempre viene desde el 7-oct (sin sucursal, el nombre del negocio).
   final String? sucursal;
   final String slug;
-  final String postulacionId;
+  final String? postulacionId;
+
+  /// «Nuevo candidato», «Video recibido»… (7-oct; null con un servidor anterior).
+  final String? titulo;
+
+  /// «Ana P. envió su video» o, en el ranking, solo la acción.
+  String get frase => candidato == null ? accion : '$candidato $accion';
 }
 
 /// `GET /negocio/novedades`. `hasta` es el «visto hasta» que se guarda al abrirla.

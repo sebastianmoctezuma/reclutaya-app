@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/inicio.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/yo.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
@@ -30,6 +31,8 @@ Future<void> _bajarHasta(WidgetTester tester, Finder f) =>
     tester.dragUntilVisible(f, _lista, const Offset(0, -300));
 
 void main() {
+  setUpAll(() => initializeDateFormatting('es_MX'));
+
   testWidgets(
     'con el servidor nuevo: todas las secciones del Inicio web, sin acciones',
     (tester) async {
@@ -203,7 +206,7 @@ void main() {
   });
 
   testWidgets(
-    'la campana cuenta lo nuevo y, al abrirla, lo muestra y lo da por visto',
+    'la campana cuenta lo nuevo y abre la Actividad, que lo da por visto',
     (tester) async {
       comoTelefono(tester);
       final almacen = AlmacenMemoria();
@@ -212,9 +215,11 @@ void main() {
       expect(find.text('2'), findsOneWidget, reason: 'insignia con las nuevas');
       await tester.tap(find.bySemanticsLabel(RegExp('Novedades')));
       await tester.pumpAndSettle();
-      expect(find.text('Novedades'), findsOneWidget);
-      expect(find.text('Luis P. mandó su video'), findsOneWidget);
-      expect(find.text('Ana P. se postuló'), findsOneWidget);
+      expect(find.text('Actividad'), findsOneWidget);
+      expect(find.text('Video recibido'), findsOneWidget);
+      expect(find.text('Luis P. envió su video'), findsOneWidget);
+      // Siempre la vacante y la sucursal.
+      expect(find.text('Mesero · Centro'), findsNWidgets(2));
       expect(almacen.datos.values, isNotEmpty, reason: 'guarda el visto hasta');
     },
   );

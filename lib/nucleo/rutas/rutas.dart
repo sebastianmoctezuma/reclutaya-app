@@ -9,6 +9,7 @@ import 'package:reclutaya_app/funciones/cascaron/pantalla_cascaron.dart';
 import 'package:reclutaya_app/funciones/cuenta/pantalla_cuenta.dart';
 import 'package:reclutaya_app/funciones/negocio/candidato/pantalla_candidato.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/pantalla_inicio.dart';
+import 'package:reclutaya_app/funciones/negocio/novedades/pantalla_actividad.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/pantalla_vacante.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/pantalla_vacantes.dart';
 import 'package:reclutaya_app/nucleo/rutas/guardas.dart';
@@ -54,6 +55,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/inicio',
                 builder: (_, _) => const PantallaInicio(),
+                routes: [
+                  GoRoute(
+                    path: 'actividad',
+                    builder: (_, s) =>
+                        PantallaActividad(vistoAntes: s.extra as DateTime?),
+                  ),
+                ],
               ),
             ],
           ),

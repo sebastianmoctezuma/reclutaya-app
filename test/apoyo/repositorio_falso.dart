@@ -30,15 +30,18 @@ class RepositorioFalso implements RepositorioNegocio {
         Novedad(
           tipo: 'video',
           at: DateTime.utc(2026, 10, 6, 17),
+          titulo: 'Video recibido',
           candidato: 'Luis P.',
-          accion: 'mandó su video',
+          accion: 'envió su video',
           puesto: 'Mesero',
+          sucursal: 'Centro',
           slug: 'mesero-abc',
           postulacionId: 'p2',
         ),
         Novedad(
           tipo: 'postulacion',
           at: DateTime.utc(2026, 10, 6, 12),
+          titulo: 'Nuevo candidato',
           candidato: 'Ana P.',
           accion: 'se postuló',
           puesto: 'Mesero',
@@ -49,6 +52,9 @@ class RepositorioFalso implements RepositorioNegocio {
       ],
     ),
   );
+  final registros = <(String, String, bool)>[];
+  final cambios = <(String, bool)>[];
+  final bajas = <String>[];
   int llamadasCandidato = 0;
   int llamadasRanking = 0;
   int llamadasYo = 0;
@@ -97,5 +103,34 @@ class RepositorioFalso implements RepositorioNegocio {
   Future<Resultado<FichaCandidato>> candidato(String postulacionId) {
     llamadasCandidato++;
     return _r(candidatoR);
+  }
+
+  @override
+  Future<Resultado<void>> registrarDispositivo({
+    required String token,
+    required String plataforma,
+    required bool activos,
+  }) async {
+    registros.add((token, plataforma, activos));
+    return const Exito(null);
+  }
+
+  @override
+  Future<Resultado<void>> cambiarAvisos({
+    required String token,
+    required String plataforma,
+    required bool activos,
+  }) async {
+    cambios.add((token, activos));
+    return const Exito(null);
+  }
+
+  @override
+  Future<Resultado<void>> bajaDispositivo({
+    required String token,
+    required String plataforma,
+  }) async {
+    bajas.add(token);
+    return const Exito(null);
   }
 }

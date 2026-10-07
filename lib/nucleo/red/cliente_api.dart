@@ -37,19 +37,32 @@ class ClienteApi {
   Future<Resultado<Map<String, dynamic>>> get(
     String ruta, {
     Map<String, String>? query,
-  }) => _intentar(ruta, query, intento: 0);
+  }) => _intentar('GET', ruta, query, null, intento: 0);
+
+  /// Las únicas escrituras de la app (API v2: el registro del teléfono para los
+  /// avisos). Mismos reintentos y misma renovación de sesión que las lecturas. `ruta`
+  /// puede ser una URL completa (la v2 vive junto a la v1).
+  Future<Resultado<Map<String, dynamic>>> escribir(
+    String metodo,
+    String ruta,
+    Map<String, Object?> cuerpo,
+  ) => _intentar(metodo, ruta, null, cuerpo, intento: 0);
 
   Future<Resultado<Map<String, dynamic>>> _intentar(
+    String metodo,
     String ruta,
-    Map<String, String>? query, {
+    Map<String, String>? query,
+    Map<String, Object?>? cuerpo, {
     required int intento,
   }) async {
     final Response<dynamic> res;
     try {
-      res = await _dio.get<dynamic>(
+      res = await _dio.request<dynamic>(
         ruta,
         queryParameters: query,
+        data: cuerpo,
         options: Options(
+          method: metodo,
           headers: {'Authorization': 'Bearer ${_tokens.token ?? ''}'},
           validateStatus: (_) => true,
         ),
@@ -90,12 +103,24 @@ class ClienteApi {
           await _tokens.sesionVencida();
           return Falla(error);
         }
-        return await _intentar(ruta, query, intento: intento + 1);
+        return await _intentar(
+          metodo,
+          ruta,
+          query,
+          cuerpo,
+          intento: intento + 1,
+        );
       case AccionReintento.esperarYReintentar:
         await Future<void>.delayed(
           Duration(seconds: (error as Limite).segundos),
         );
-        return await _intentar(ruta, query, intento: intento + 1);
+        return await _intentar(
+          metodo,
+          ruta,
+          query,
+          cuerpo,
+          intento: intento + 1,
+        );
       case AccionReintento.noReintentar:
         if (error is SesionVencida) await _tokens.sesionVencida();
         return Falla(error);

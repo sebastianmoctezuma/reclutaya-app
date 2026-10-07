@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/presentacion.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
+import 'package:reclutaya_app/funciones/negocio/novedades/controlador_avisos.dart';
 import 'package:reclutaya_app/nucleo/config.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
@@ -14,6 +17,7 @@ import 'package:reclutaya_app/nucleo/ui/esqueleto.dart';
 import 'package:reclutaya_app/nucleo/ui/estados.dart';
 import 'package:reclutaya_app/nucleo/ui/logo_negocio.dart';
 import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
+import 'package:reclutaya_app/nucleo/ui/tesela.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const _urlTerminos = 'https://reclutaya.com/terminos';
@@ -34,8 +38,9 @@ class PantallaCuenta extends ConsumerWidget {
       destructivo: true,
     );
     if (!ok) return;
-    // La limpieza de memoria la hace `limpiezaSesionProvider` al ver salir la
-    // sesión: esta pantalla se desmonta antes de que `salir()` termine.
+    // Primero el teléfono deja de recibir avisos (con la sesión aún válida). La
+    // limpieza de memoria la hace `limpiezaSesionProvider` al ver salir la sesión.
+    await ref.read(controladorAvisosProvider.notifier).alSalir();
     await ref.read(sesionProvider).salir();
   }
 
@@ -114,6 +119,7 @@ class PantallaCuenta extends ConsumerWidget {
                   alReintentar: () => ref.invalidate(yoProvider),
                 ),
               ),
+              const _Avisos(),
               const SizedBox(height: 12),
               Tarjeta(
                 padding: const EdgeInsets.symmetric(vertical: 6),
@@ -197,6 +203,55 @@ class _Version extends StatelessWidget {
           s.data ?? '',
           style: Theme.of(context).textTheme.labelSmall!
               .copyWith(color: context.t.tintaSuave),
+        ),
+      ),
+    );
+  }
+}
+
+/// El interruptor de los avisos al celular de ESTE teléfono (7-oct). Solo aparece si la
+/// app trae Firebase configurado.
+class _Avisos extends ConsumerWidget {
+  const _Avisos();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final tt = Theme.of(context).textTheme;
+    final estado = ref.watch(controladorAvisosProvider).value;
+    if (estado == null || !estado.disponible) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Tarjeta(
+        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+        child: Row(
+          children: [
+            Tesela(icono: Icons.notifications_rounded, color: t.naranja),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Notificaciones', style: tt.titleMedium),
+                  Text(
+                    'Candidatos nuevos, videos, documentos, tests y rankings listos.',
+                    style: tt.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Switch.adaptive(
+              value: estado.activos,
+              activeTrackColor: t.verde,
+              onChanged: (v) async {
+                hapticoSeleccion();
+                await ref
+                    .read(controladorAvisosProvider.notifier)
+                    .cambiar(activos: v);
+              },
+            ),
+          ],
         ),
       ),
     );
