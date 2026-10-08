@@ -24,4 +24,5 @@ Yo _$YoFromJson(Map<String, dynamic> json) => Yo(
       : EmpresaYo.fromJson(json['empresa'] as Map<String, dynamic>),
   variasSucursales: json['variasSucursales'] as bool? ?? false,
   correo: json['correo'] as String?,
+  usuarioId: json['usuarioId'] as String?,
 );

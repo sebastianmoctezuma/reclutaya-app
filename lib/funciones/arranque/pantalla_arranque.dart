@@ -7,7 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:reclutaya_app/funciones/acceso/controlador_acceso.dart';
 import 'package:reclutaya_app/funciones/arranque/isotipo_liquido.dart';
 import 'package:reclutaya_app/funciones/arranque/nivel_espera.dart';
+import 'package:reclutaya_app/funciones/cuentas/gestor_cuentas.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
+import 'package:reclutaya_app/funciones/negocio/novedades/controlador_avisos.dart';
 import 'package:reclutaya_app/nucleo/sesion/arranque_core.dart';
 import 'package:reclutaya_app/nucleo/sesion/providers.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
@@ -69,7 +71,12 @@ class _PantallaArranqueState extends ConsumerState<PantallaArranque>
     String? tipo;
     if (sesion.autenticado) {
       final r = await ref.read(repositorioProvider).yo();
-      if (r case Exito(:final valor)) tipo = valor.tipo;
+      if (r case Exito(:final valor)) {
+        tipo = valor.tipo;
+        if (valor.esNegocio) {
+          await ref.read(gestorCuentasProvider.notifier).recordarActiva(valor);
+        }
+      }
     }
     if (!mounted) return;
     final destino = destinoArranque(
@@ -83,7 +90,7 @@ class _PantallaArranqueState extends ConsumerState<PantallaArranque>
         _ir('/inicio');
       case DestinoArranque.candidatoNoSoportado:
         ref.read(avisoAccesoProvider.notifier).aviso = avisoSoloNegocios;
-        await sesion.salir();
+        await ref.read(cerrarSesionProvider)();
         if (mounted) _ir('/entrar');
     }
   }

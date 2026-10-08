@@ -7,7 +7,10 @@ import 'package:reclutaya_app/funciones/negocio/novedades/controlador_avisos.dar
 import 'package:reclutaya_app/nucleo/almacen/almacen_local.dart';
 import 'package:reclutaya_app/nucleo/push/servicio_avisos.dart';
 
+import 'package:reclutaya_app/nucleo/sesion/providers.dart';
+
 import '../../../apoyo/repositorio_falso.dart';
+import '../../../apoyo/sesion_falsa.dart';
 
 class _Avisos implements ServicioAvisos {
   _Avisos({this.disponible = true, this.tokenDado = 'tok-1'});
@@ -30,14 +33,24 @@ class _Avisos implements ServicioAvisos {
   Stream<Map<String, dynamic>> get tocados => _tocados.stream;
   @override
   Future<Map<String, dynamic>?> tocadoAlAbrir() async => null;
+
+  int olvidos = 0;
+  @override
+  Future<void> olvidarToken() async => olvidos++;
 }
 
-ProviderContainer _c(RepositorioFalso r, ServicioAvisos a, AlmacenMemoria m) {
+ProviderContainer _c(
+  RepositorioFalso r,
+  ServicioAvisos a,
+  AlmacenMemoria m, [
+  SesionFalsa? sesion,
+]) {
   final c = ProviderContainer(
     overrides: [
       repositorioProvider.overrideWithValue(r),
       servicioAvisosProvider.overrideWithValue(a),
       almacenLocalProvider.overrideWithValue(m),
+      sesionProvider.overrideWithValue(sesion ?? SesionFalsa()),
     ],
   );
   addTearDown(c.dispose);
@@ -105,4 +118,33 @@ void main() {
     await c.read(controladorAvisosProvider.notifier).alEntrar();
     expect(r.registros, isEmpty);
   });
+
+  test('al perder la sesión por cualquier camino (aquí, vencida), el teléfono olvida su token', () async {
+    final r = RepositorioFalso();
+    final a = _Avisos();
+    final sesion = SesionFalsa();
+    _c(r, a, AlmacenMemoria(), sesion).listen(avisosSesionProvider, (_, _) {});
+    await sesion.entrar('a@b.mx', 'x');
+    await Future<void>.delayed(Duration.zero);
+    await sesion.sesionVencida();
+    await Future<void>.delayed(Duration.zero);
+    expect(a.olvidos, 1);
+  });
+
+  test(
+    'cerrar sesión da de baja el teléfono, olvida el token y sale',
+    () async {
+      final r = RepositorioFalso();
+      final a = _Avisos();
+      final sesion = SesionFalsa();
+      final c = _c(r, a, AlmacenMemoria(), sesion);
+      await sesion.entrar('a@b.mx', 'x');
+      await c.read(controladorAvisosProvider.future);
+      await c.read(controladorAvisosProvider.notifier).alEntrar();
+      await c.read(cerrarSesionProvider)();
+      expect(r.bajas, ['tok-1']);
+      expect(a.olvidos, greaterThanOrEqualTo(1));
+      expect(sesion.salidas, 1);
+    },
+  );
 }

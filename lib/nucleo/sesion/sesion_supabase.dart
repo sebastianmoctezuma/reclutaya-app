@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:reclutaya_app/nucleo/config.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
@@ -89,8 +90,97 @@ class SesionSupabase extends Sesion {
 
   @override
   Future<void> sesionVencida() {
+    final decide = alVencer;
+    if (decide != null) return decide();
+    return salirPorVencimiento();
+  }
+
+  @override
+  Future<void> salirPorVencimiento() {
     _vencio = true;
     return salir();
+  }
+
+  // ── Varias cuentas (8-oct) ──
+
+  @override
+  Future<void> Function()? alVencer;
+
+  @override
+  String? get refreshToken => _auth.currentSession?.refreshToken;
+
+  @override
+  String? get correo => _auth.currentUser?.email;
+
+  @override
+  Future<bool> usarCuenta(String refreshToken) async {
+    try {
+      final r = await _auth
+          .setSession(refreshToken)
+          .timeout(const Duration(seconds: 10));
+      return r.session != null;
+    } on AuthException {
+      return false;
+    } on Exception {
+      throw const SinRed();
+    }
+  }
+
+  /// Directo al endpoint de Supabase Auth: el cliente solo maneja UNA sesión, y
+  /// renovar otra cuenta con él la volvería la activa.
+  static final _http = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 15),
+      validateStatus: (_) => true,
+    ),
+  );
+
+  @override
+  Future<({String acceso, String refresh})?> renovarAparte(
+    String refreshToken,
+  ) async {
+    final Response<dynamic> r;
+    try {
+      r = await _http.post<dynamic>(
+        '${Config.supabaseUrl}/auth/v1/token',
+        queryParameters: {'grant_type': 'refresh_token'},
+        data: {'refresh_token': refreshToken},
+        options: Options(headers: {'apikey': Config.supabaseAnonKey}),
+      );
+    } on DioException {
+      throw const SinRed();
+    }
+    final cuerpo = r.data;
+    if (r.statusCode == 200 && cuerpo is Map) {
+      final acceso = cuerpo['access_token'];
+      final refresh = cuerpo['refresh_token'];
+      if (acceso is String && refresh is String) {
+        return (acceso: acceso, refresh: refresh);
+      }
+    }
+    if (r.statusCode == 400 || r.statusCode == 401 || r.statusCode == 403) {
+      return null;
+    }
+    throw const SinRed();
+  }
+
+  @override
+  Future<void> revocar(String accesoToken) async {
+    try {
+      await _http.post<dynamic>(
+        '${Config.supabaseUrl}/auth/v1/logout',
+        queryParameters: {'scope': 'local'},
+        options: Options(
+          headers: {
+            'apikey': Config.supabaseAnonKey,
+            'Authorization': 'Bearer $accesoToken',
+          },
+        ),
+      );
+    } on DioException {
+      // Sin red: la sesión queda viva hasta que caduque; no hay nada más que hacer.
+    }
   }
 
   @override

@@ -3,13 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:reclutaya_app/funciones/cuentas/gestor_cuentas.dart';
+import 'package:reclutaya_app/funciones/cuentas/selector_cuentas.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/presentacion.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
 import 'package:reclutaya_app/funciones/negocio/novedades/controlador_avisos.dart';
 import 'package:reclutaya_app/nucleo/config.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
-import 'package:reclutaya_app/nucleo/sesion/providers.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 import 'package:reclutaya_app/nucleo/ui/avatar_iniciales.dart';
 import 'package:reclutaya_app/nucleo/ui/chip.dart';
@@ -30,18 +31,33 @@ class PantallaCuenta extends ConsumerWidget {
   const PantallaCuenta({super.key});
 
   Future<void> _salir(BuildContext context, WidgetRef ref) async {
+    // Con varias cuentas, «salir» es quitar ESTA del teléfono y pasar a otra.
+    final varias = (ref.read(gestorCuentasProvider).value?.length ?? 0) > 1;
     final ok = await confirmar(
       context,
-      titulo: 'Cerrar sesión',
-      mensaje: '¿Quieres cerrar sesión en este dispositivo?',
-      aceptar: 'Salir',
+      titulo: varias ? 'Quitar esta cuenta' : 'Cerrar sesión',
+      mensaje: varias
+          ? 'Se cierra su sesión en este teléfono y pasas a otra de tus cuentas.'
+          : '¿Quieres cerrar sesión en este dispositivo?',
+      aceptar: varias ? 'Quitar' : 'Salir',
       destructivo: true,
     );
     if (!ok) return;
-    // Primero el teléfono deja de recibir avisos (con la sesión aún válida). La
-    // limpieza de memoria la hace `limpiezaSesionProvider` al ver salir la sesión.
-    await ref.read(controladorAvisosProvider.notifier).alSalir();
-    await ref.read(sesionProvider).salir();
+    // La salida única: da de baja el teléfono y luego cierra. La limpieza de memoria
+    // la hace `limpiezaSesionProvider` al ver salir la sesión.
+    await ref.read(cerrarSesionProvider)();
+  }
+
+  Future<void> _cerrarTodas(BuildContext context, WidgetRef ref) async {
+    final ok = await confirmar(
+      context,
+      titulo: 'Cerrar todas las sesiones',
+      mensaje: 'Se cierran todas las cuentas de este teléfono.',
+      aceptar: 'Cerrar todas',
+      destructivo: true,
+    );
+    if (!ok) return;
+    await ref.read(gestorCuentasProvider.notifier).cerrarTodas();
   }
 
   Future<void> _abrir(String url) =>
@@ -52,6 +68,7 @@ class PantallaCuenta extends ConsumerWidget {
     final t = context.t;
     final tt = Theme.of(context).textTheme;
     final yo = ref.watch(yoProvider);
+    final varias = (ref.watch(gestorCuentasProvider).value?.length ?? 0) > 1;
     return PaginaConTitulo(
       titulo: 'Cuenta',
       slivers: [
@@ -61,6 +78,8 @@ class PantallaCuenta extends ConsumerWidget {
             children: [
               yo.when(
                 data: (y) => Tarjeta(
+                  // Tocar el negocio abre las cuentas del teléfono (como Instagram).
+                  alTocar: () => mostrarSelectorCuentas(context),
                   child: Row(
                     children: [
                       if (y.empresa != null)
@@ -77,9 +96,26 @@ class PantallaCuenta extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              y.empresa?.nombre ?? y.nombre ?? 'Tu cuenta',
-                              style: tt.titleLarge,
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    y.empresa?.nombre ??
+                                        y.nombre ??
+                                        'Tu cuenta',
+                                    style: tt.titleLarge,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.expand_more_rounded,
+                                  size: 22,
+                                  color: t.tintaSuave,
+                                  semanticLabel: 'Cambiar de cuenta',
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -144,8 +180,20 @@ class PantallaCuenta extends ConsumerWidget {
                   shape: const StadiumBorder(),
                   textStyle: tt.labelLarge,
                 ),
-                child: const Text('Cerrar sesión'),
+                child: Text(varias ? 'Quitar esta cuenta' : 'Cerrar sesión'),
               ),
+              if (varias) ...[
+                const SizedBox(height: 10),
+                TextButton(
+                  onPressed: () => _cerrarTodas(context, ref),
+                  style: TextButton.styleFrom(
+                    foregroundColor: t.rojo,
+                    minimumSize: const Size.fromHeight(44),
+                    textStyle: tt.labelLarge,
+                  ),
+                  child: const Text('Cerrar todas las sesiones'),
+                ),
+              ],
               const SizedBox(height: 20),
               const _Version(),
             ],

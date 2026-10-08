@@ -123,6 +123,7 @@ class PantallaActividad extends ConsumerWidget {
   'ranking' => (Icons.leaderboard_rounded, t.azul),
   'expediente_documento' => (Icons.folder_rounded, t.naranjaProfundo),
   'expediente_completo' => (Icons.folder_special_rounded, t.verdeProfundo),
+  'entrevista_pronto' => (Icons.videocam_rounded, t.azul),
   _ => (Icons.person_add_alt_1_rounded, t.azul),
 };
 
@@ -144,6 +145,7 @@ class _Resumen extends StatelessWidget {
       'ranking': ('ranking', 'rankings'),
       'expediente_documento': ('papel', 'papeles'),
       'expediente_completo': ('expediente', 'expedientes'),
+      'entrevista_pronto': ('entrevista', 'entrevistas'),
     };
     return Wrap(
       spacing: 8,

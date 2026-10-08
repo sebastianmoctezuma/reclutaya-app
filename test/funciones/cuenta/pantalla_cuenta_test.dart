@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:reclutaya_app/funciones/cuenta/pantalla_cuenta.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
+import 'package:reclutaya_app/nucleo/almacen/almacen_local.dart';
 import 'package:reclutaya_app/nucleo/sesion/providers.dart';
 import 'package:reclutaya_app/nucleo/tema/tema.dart';
 
@@ -14,6 +15,7 @@ import '../../apoyo/telefono.dart';
 Widget _app(SesionFalsa s) => ProviderScope(
   overrides: [
     sesionProvider.overrideWithValue(s),
+    almacenLocalProvider.overrideWithValue(AlmacenMemoria()),
     repositorioProvider.overrideWithValue(RepositorioFalso()),
   ],
   retry: sinReintentos,

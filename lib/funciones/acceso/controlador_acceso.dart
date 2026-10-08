@@ -1,9 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:reclutaya_app/funciones/cuentas/gestor_cuentas.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
+import 'package:reclutaya_app/funciones/negocio/novedades/controlador_avisos.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
 import 'package:reclutaya_app/nucleo/sesion/providers.dart';
+import 'package:reclutaya_app/nucleo/ui/mensaje_global.dart';
 import 'package:reclutaya_app/nucleo/util/resultado.dart';
 
 const avisoSoloNegocios =
@@ -29,11 +32,31 @@ class ControladorAcceso extends AsyncNotifier<void> {
       state = AsyncError(error, StackTrace.current);
       return;
     }
+    final gestor = ref.read(gestorCuentasProvider.notifier);
+    final agregando = ref.read(agregandoCuentaProvider);
     final yo = await ref.read(repositorioProvider).yo();
     if (yo case Exito(:final valor) when !valor.esNegocio) {
-      await sesion.salir();
+      if (agregando) {
+        // Se estaba agregando una cuenta: regresa a la que estaba.
+        await gestor.cancelarAgregar(sesionNueva: true);
+      } else {
+        await ref.read(cerrarSesionProvider)();
+      }
       state = AsyncError(const Servidor(avisoSoloNegocios), StackTrace.current);
       return;
+    }
+    if (yo case Exito(:final valor)) {
+      await gestor.recordarActiva(valor);
+      if (agregando) {
+        // La cuenta agregada queda como la activa: nada de la anterior en memoria.
+        limpiarDatosDeCuenta(ref);
+        ref.invalidate(controladorAvisosProvider);
+        unawaited(ref.read(controladorAvisosProvider.notifier).alEntrar());
+        mostrarMensaje(
+          ref,
+          'Cambiaste a ${valor.empresa?.nombre ?? 'tu cuenta'}',
+        );
+      }
     }
     state = const AsyncData(null);
   }

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reclutaya_app/funciones/acceso/pantalla_entrar.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
+import 'package:reclutaya_app/nucleo/almacen/almacen_local.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
 import 'package:reclutaya_app/nucleo/rutas/guardas.dart';
 import 'package:reclutaya_app/nucleo/sesion/providers.dart';
@@ -17,6 +18,7 @@ import '../../apoyo/sesion_falsa.dart';
 Widget _app(SesionFalsa s, RepositorioFalso r) => ProviderScope(
   overrides: [
     sesionProvider.overrideWithValue(s),
+    almacenLocalProvider.overrideWithValue(AlmacenMemoria()),
     repositorioProvider.overrideWithValue(r),
   ],
   retry: sinReintentos,
@@ -86,6 +88,7 @@ void main() {
         ProviderScope(
           overrides: [
             sesionProvider.overrideWithValue(s),
+            almacenLocalProvider.overrideWithValue(AlmacenMemoria()),
             repositorioProvider.overrideWithValue(r),
           ],
           retry: sinReintentos,

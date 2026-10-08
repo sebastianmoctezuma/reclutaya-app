@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reclutaya_app/nucleo/config.dart';
 import 'package:reclutaya_app/nucleo/plataforma/plataforma.dart';
+import 'package:reclutaya_app/nucleo/util/esperar.dart';
 
 /// Los avisos al celular (7-oct), detrás de una interfaz: la app nunca llama a
 /// Firebase directo, y las pruebas usan uno falso.
@@ -26,6 +27,11 @@ abstract class ServicioAvisos {
 
   /// El aviso que abrió la app desde cerrada (si fue así).
   Future<Map<String, dynamic>?> tocadoAlAbrir();
+
+  /// Borra el token EN EL TELÉFONO: deja de servir en Firebase, así que ningún aviso
+  /// de la cuenta anterior llega aunque el servidor no se haya enterado (sesión
+  /// vencida). El servidor lo da de baja solo cuando FCM le diga que ya no existe.
+  Future<void> olvidarToken();
 }
 
 /// Sin Firebase configurado: la app funciona igual, sin avisos.
@@ -44,6 +50,8 @@ class AvisosApagados implements ServicioAvisos {
   Stream<Map<String, dynamic>> get tocados => const Stream.empty();
   @override
   Future<Map<String, dynamic>?> tocadoAlAbrir() async => null;
+  @override
+  Future<void> olvidarToken() async {}
 }
 
 class AvisosFirebase implements ServicioAvisos {
@@ -85,8 +93,12 @@ class AvisosFirebase implements ServicioAvisos {
     final m = FirebaseMessaging.instance;
     final permiso = await m.requestPermission();
     if (permiso.authorizationStatus == AuthorizationStatus.denied) return null;
-    // En iPhone el token de Firebase necesita antes el de APNs.
-    if (Plataforma.esIOS && await m.getAPNSToken() == null) return null;
+    // En iPhone el token de Firebase necesita antes el de APNs, que al abrir la app
+    // por primera vez tarda un poco: se espera hasta 5 s (10 × 500 ms) en vez de
+    // rendirse al primer intento.
+    if (Plataforma.esIOS && await esperarValor(m.getAPNSToken) == null) {
+      return null;
+    }
     return await m.getToken();
   }
 
@@ -101,6 +113,19 @@ class AvisosFirebase implements ServicioAvisos {
   Future<Map<String, dynamic>?> tocadoAlAbrir() async {
     await iniciar();
     return (await FirebaseMessaging.instance.getInitialMessage())?.data;
+  }
+
+  @override
+  Future<void> olvidarToken() async {
+    if (!_listo) return;
+    try {
+      await FirebaseMessaging.instance.deleteToken().timeout(
+        const Duration(seconds: 4),
+      );
+    } on Object {
+      // Sin red: el token sigue vivo; al volver a entrar se re-registra al usuario
+      // nuevo (el servidor reasigna el token), así que no queda con el anterior.
+    }
   }
 }
 

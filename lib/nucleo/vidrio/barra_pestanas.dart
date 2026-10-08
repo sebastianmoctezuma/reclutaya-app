@@ -28,12 +28,17 @@ class BarraPestanas extends StatelessWidget {
     required this.indice,
     required this.alCambiar,
     required this.items,
+    this.alMantener,
     super.key,
   });
 
   final int indice;
   final ValueChanged<int> alCambiar;
   final List<PestanaItem> items;
+
+  /// Dejar presionada una pestaña (p. ej. «Cuenta» abre las cuentas del teléfono). Solo
+  /// en la barra propia: la de vidrio nativo de iOS 26 no la reporta a Flutter.
+  final ValueChanged<int>? alMantener;
 
   void _tocar(int i) {
     hapticoSeleccion();
@@ -142,6 +147,12 @@ class _Capsula extends StatelessWidget {
                                 child: GestureDetector(
                                   behavior: HitTestBehavior.opaque,
                                   onTap: () => barra._tocar(i),
+                                  onLongPress: barra.alMantener == null
+                                      ? null
+                                      : () {
+                                          hapticoSeleccion();
+                                          barra.alMantener!(i);
+                                        },
                                   child: _Pestana(
                                     item: barra.items[i],
                                     activa: i == barra.indice,

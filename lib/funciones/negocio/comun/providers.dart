@@ -126,6 +126,22 @@ final candidatoProvider = FutureProvider.autoDispose
 /// datos sin sesión y ese error se quedaba guardado para la cuenta siguiente (6-oct).
 /// Vive en el contenedor, no en una pantalla. `App` lo observa. Si la salida fue por
 /// vencimiento, deja el aviso para Entrar.
+/// Olvida en memoria todo lo leído de una cuenta: al salir, al entrar con otra y al
+/// cambiar de cuenta (varias cuentas, 8-oct). Nada de una cuenta se ve en la otra.
+void limpiarDatosDeCuenta(Ref ref) {
+  ref
+    ..invalidate(yoProvider)
+    ..invalidate(inicioProvider)
+    ..invalidate(vacantesActivasProvider)
+    ..invalidate(vacantesCerradasProvider)
+    ..invalidate(sucursalesProvider)
+    ..invalidate(novedadesProvider)
+    ..invalidate(filtroSucursalProvider)
+    ..invalidate(vacanteProvider)
+    ..invalidate(rankingProvider)
+    ..invalidate(candidatoProvider);
+}
+
 final limpiezaSesionProvider = Provider<void>((ref) {
   ref.listen(autenticadoProvider, (anterior, siguiente) {
     final antes = anterior?.value;
@@ -133,17 +149,7 @@ final limpiezaSesionProvider = Provider<void>((ref) {
     if (ahora == null || antes == ahora) return;
     // Al entrar solo hace falta si antes hubo una salida (no en el primer arranque).
     if (ahora && antes == null) return;
-    ref
-      ..invalidate(yoProvider)
-      ..invalidate(inicioProvider)
-      ..invalidate(vacantesActivasProvider)
-      ..invalidate(vacantesCerradasProvider)
-      ..invalidate(sucursalesProvider)
-      ..invalidate(novedadesProvider)
-      ..invalidate(filtroSucursalProvider)
-      ..invalidate(vacanteProvider)
-      ..invalidate(rankingProvider)
-      ..invalidate(candidatoProvider);
+    limpiarDatosDeCuenta(ref);
     if (ahora) {
       ref.invalidate(vistoHastaProvider);
     } else {

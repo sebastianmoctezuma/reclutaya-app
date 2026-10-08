@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reclutaya_app/funciones/acceso/controlador_acceso.dart';
+import 'package:reclutaya_app/funciones/cuentas/gestor_cuentas.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/plataforma/plataforma.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
@@ -68,6 +69,8 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
       }
     });
     final acceso = ref.watch(accesoProvider);
+    // «Agregar cuenta» (varias cuentas, 8-oct): misma pantalla, con «Cancelar».
+    final agregando = ref.watch(agregandoCuentaProvider);
     final cargando = acceso.isLoading;
     final aviso = ref.watch(avisoAccesoProvider);
     final error = acceso.hasError ? acceso.error : null;
@@ -91,12 +94,38 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (agregando)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            key: const Key('cancelarAgregar'),
+                            onPressed: cargando
+                                ? null
+                                : () async {
+                                    final router = GoRouter.of(context);
+                                    await ref
+                                        .read(gestorCuentasProvider.notifier)
+                                        .cancelarAgregar(sesionNueva: false);
+                                    if (router.canPop()) {
+                                      router.pop();
+                                    } else {
+                                      router.go('/inicio');
+                                    }
+                                  },
+                            child: const Text('Cancelar'),
+                          ),
+                        ),
                       const _Marca(),
                       const SizedBox(height: 22),
-                      Text('Bienvenido de vuelta', style: tt.headlineSmall),
+                      Text(
+                        agregando ? 'Agregar cuenta' : 'Bienvenido de vuelta',
+                        style: tt.headlineSmall,
+                      ),
                       const SizedBox(height: 6),
                       Text(
-                        'Entra con tu correo y contraseña.',
+                        agregando
+                            ? 'Entra con el correo y la contraseña de la otra cuenta.'
+                            : 'Entra con tu correo y contraseña.',
                         style: tt.bodySmall,
                       ),
                       const SizedBox(height: 22),

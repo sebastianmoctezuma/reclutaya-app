@@ -36,6 +36,7 @@ class Yo {
     this.empresa,
     this.variasSucursales = false,
     this.correo,
+    this.usuarioId,
   });
 
   factory Yo.fromJson(Map<String, dynamic> json) => _$YoFromJson(json);
@@ -51,6 +52,9 @@ class Yo {
   final EmpresaYo? empresa;
   @JsonKey(defaultValue: false)
   final bool variasSucursales;
+
+  /// El id de ReclutaYa del usuario (8-oct, varias cuentas); null con un servidor anterior.
+  final String? usuarioId;
   final String? correo;
 
   bool get esNegocio => tipo == 'negocio';

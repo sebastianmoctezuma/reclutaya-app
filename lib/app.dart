@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:reclutaya_app/funciones/cuentas/gestor_cuentas.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
 import 'package:reclutaya_app/funciones/negocio/novedades/controlador_avisos.dart';
 import 'package:reclutaya_app/nucleo/rutas/rutas.dart';
 import 'package:reclutaya_app/nucleo/tema/tema.dart';
+import 'package:reclutaya_app/nucleo/ui/mensaje_global.dart';
 
 /// Una sola raíz Material; en iOS, transiciones y widgets Cupertino vía
 /// `adaptativos`. Tema claro y oscuro siguiendo el sistema.
@@ -15,8 +17,10 @@ class App extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref
       ..watch(limpiezaSesionProvider)
-      ..watch(avisosSesionProvider);
+      ..watch(avisosSesionProvider)
+      ..watch(cuentasSesionProvider);
     return MaterialApp.router(
+      scaffoldMessengerKey: ref.watch(mensajeriaProvider),
       title: 'ReclutaYa',
       routerConfig: ref.watch(routerProvider),
       theme: temaClaro(),

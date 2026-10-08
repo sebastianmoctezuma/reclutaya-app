@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:reclutaya_app/funciones/cuentas/selector_cuentas.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/inicio_core.dart';
 import 'package:reclutaya_app/nucleo/plataforma/plataforma.dart';
@@ -83,6 +86,12 @@ class _PantallaCascaronState extends ConsumerState<PantallaCascaron> {
         child: BarraPestanas(
           indice: shell.currentIndex,
           items: items,
+          // Dejar presionada «Cuenta»: las cuentas del teléfono (como Instagram).
+          alMantener: (i) {
+            if (i == items.length - 1) {
+              unawaited(mostrarSelectorCuentas(context));
+            }
+          },
           alCambiar: (i) {
             setState(() => _barraVisible = true);
             shell.goBranch(i, initialLocation: i == shell.currentIndex);
