@@ -7,6 +7,7 @@ import 'package:reclutaya_app/funciones/negocio/candidato/bloque_video.dart';
 import 'package:reclutaya_app/funciones/negocio/candidato/controlador_ficha.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/ficha_candidato.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
+import 'package:reclutaya_app/funciones/negocio/comun/revalidar_al_entrar.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
@@ -55,46 +56,54 @@ class _PantallaCandidatoState extends ConsumerState<PantallaCandidato> {
   Widget build(BuildContext context) {
     final id = widget.postulacionId;
     final ficha = ref.watch(candidatoProvider(id));
-    return PaginaConTitulo(
-      // El nombre va UNA vez, en el encabezado de la ficha.
-      titulo: 'Candidato',
-      alRefrescar: () async {
-        ref.invalidate(candidatoProvider(id));
-        try {
-          await ref.read(candidatoProvider(id).future);
-        } on ErrorApi {
-          // La pantalla ya muestra el error.
+    return RevalidarAlEntrar(
+      alEntrar: (ref) {
+        if (ref.exists(candidatoProvider(id)) &&
+            ref.read(candidatoProvider(id)).hasValue) {
+          ref.invalidate(candidatoProvider(id));
         }
       },
-      slivers: [
-        if (ficha.hasValue && ficha.error is SinRed)
-          const SliverToBoxAdapter(child: BannerSinRed()),
-        ...ficha.when(
-          skipError: ficha.hasValue,
-          data: (f) => [
-            SliverPadding(
-              padding: _lados,
-              sliver: SliverList.list(children: _cuerpo(context, f)),
-            ),
-          ],
-          loading: () => const [
-            SliverPadding(
-              padding: _lados,
-              sliver: SliverToBoxAdapter(child: _Cargando()),
-            ),
-          ],
-          error: (e, _) => [
-            SliverToBoxAdapter(
-              child: EstadoError(
-                error: e is ErrorApi ? e : const Servidor(),
-                alReintentar: () => e is NoEncontrado
-                    ? context.pop()
-                    : ref.invalidate(candidatoProvider(id)),
+      child: PaginaConTitulo(
+        // El nombre va UNA vez, en el encabezado de la ficha.
+        titulo: 'Candidato',
+        alRefrescar: () async {
+          ref.invalidate(candidatoProvider(id));
+          try {
+            await ref.read(candidatoProvider(id).future);
+          } on ErrorApi {
+            // La pantalla ya muestra el error.
+          }
+        },
+        slivers: [
+          if (ficha.hasValue && ficha.error is SinRed)
+            const SliverToBoxAdapter(child: BannerSinRed()),
+          ...ficha.when(
+            skipError: ficha.hasValue,
+            data: (f) => [
+              SliverPadding(
+                padding: _lados,
+                sliver: SliverList.list(children: _cuerpo(context, f)),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+            loading: () => const [
+              SliverPadding(
+                padding: _lados,
+                sliver: SliverToBoxAdapter(child: _Cargando()),
+              ),
+            ],
+            error: (e, _) => [
+              SliverToBoxAdapter(
+                child: EstadoError(
+                  error: e is ErrorApi ? e : const Servidor(),
+                  alReintentar: () => e is NoEncontrado
+                      ? context.pop()
+                      : ref.invalidate(candidatoProvider(id)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

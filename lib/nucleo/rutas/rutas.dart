@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reclutaya_app/funciones/acceso/pantalla_entrar.dart';
@@ -13,6 +14,7 @@ import 'package:reclutaya_app/funciones/negocio/novedades/pantalla_actividad.dar
 import 'package:reclutaya_app/funciones/negocio/vacantes/pantalla_vacante.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/pantalla_vacantes.dart';
 import 'package:reclutaya_app/nucleo/rutas/guardas.dart';
+import 'package:reclutaya_app/nucleo/rutas/transicion_zoom.dart';
 import 'package:reclutaya_app/nucleo/sesion/providers.dart';
 
 /// Avisa a go_router cuando la sesión cambia (entrar, salir, vencer).
@@ -58,8 +60,15 @@ final routerProvider = Provider<GoRouter>((ref) {
                 routes: [
                   GoRoute(
                     path: 'actividad',
-                    builder: (_, s) =>
-                        PantallaActividad(vistoAntes: s.extra as DateTime?),
+                    // Nace de la campana y vuelve a ella al cerrar (zoom de iOS 18,
+                    // 8-oct): la campana está arriba a la derecha del Inicio.
+                    pageBuilder: (_, s) => paginaZoom(
+                      key: s.pageKey,
+                      origen: const Alignment(0.86, -0.84),
+                      child: PantallaActividad(
+                        vistoAntes: s.extra as DateTime?,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -69,7 +78,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/vacantes',
-                builder: (_, _) => const PantallaVacantes(),
+                builder: (_, s) => PantallaVacantes(
+                  abrirSucursal: s.uri.queryParameters['sucursal'],
+                  visita: s.uri.queryParameters['t'],
+                ),
                 routes: [
                   GoRoute(
                     path: ':slug',

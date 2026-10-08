@@ -6,6 +6,7 @@ import 'package:reclutaya_app/funciones/negocio/comun/modelos/ranking.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/vacantes.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/presentacion.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
+import 'package:reclutaya_app/funciones/negocio/comun/revalidar_al_entrar.dart';
 import 'package:reclutaya_app/funciones/negocio/ranking/fila_candidato.dart';
 import 'package:reclutaya_app/funciones/negocio/ranking/filtro_material.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
@@ -44,45 +45,72 @@ class PantallaVacante extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ficha = ref.watch(vacanteProvider(slug));
+    // El ranking se pide AL MISMO TIEMPO que la ficha (8-oct) cuando la lista de
+    // vacantes, ya en memoria, dice que tiene candidatos: antes esperaba a que llegara
+    // la ficha para empezar, y eran dos viajes al servidor en fila. Sin ese dato (se
+    // llegó por un aviso) o sin candidatos, se queda como antes.
+    // `exists` primero: leer la lista la CREARÍA y dispararía otra petición.
+    final resumen = ref.exists(vacantesActivasProvider)
+        ? ref
+              .read(vacantesActivasProvider)
+              .value
+              ?.where((x) => x.slug == slug)
+              .firstOrNull
+        : null;
+    if ((resumen?.candidatos ?? 0) > 0) {
+      ref.listen(rankingProvider(slug), (_, _) {});
+    }
     final v = ficha.value;
-    return PaginaConTitulo(
-      titulo: v?.puesto ?? 'Vacante',
-      subtitulo: v == null ? null : _Subtitulo(v),
-      alRefrescar: () => _refrescar(ref),
-      slivers: [
-        if (ficha.hasValue && ficha.error is SinRed)
-          const SliverToBoxAdapter(child: BannerSinRed()),
-        ...ficha.when(
-          skipError: ficha.hasValue,
-          data: (v) => [
-            SliverPadding(
-              padding: _lados,
-              sliver: SliverToBoxAdapter(child: _Cabecera(v)),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              sliver: SliverToBoxAdapter(child: _Proceso(v.conteos)),
-            ),
-            _Ranking(vacante: v),
-          ],
-          loading: () => const [
-            SliverPadding(
-              padding: _lados,
-              sliver: SliverToBoxAdapter(child: _Cargando()),
-            ),
-          ],
-          error: (e, _) => [
-            SliverToBoxAdapter(
-              child: EstadoError(
-                error: e is ErrorApi ? e : const Servidor(),
-                alReintentar: () => e is NoEncontrado
-                    ? context.pop()
-                    : ref.invalidate(vacanteProvider(slug)),
+    return RevalidarAlEntrar(
+      alEntrar: (ref) {
+        if (ref.exists(vacanteProvider(slug)) &&
+            ref.read(vacanteProvider(slug)).hasValue) {
+          ref.invalidate(vacanteProvider(slug));
+        }
+        if (ref.exists(rankingProvider(slug)) &&
+            ref.read(rankingProvider(slug)).hasValue) {
+          ref.invalidate(rankingProvider(slug));
+        }
+      },
+      child: PaginaConTitulo(
+        titulo: v?.puesto ?? 'Vacante',
+        subtitulo: v == null ? null : _Subtitulo(v),
+        alRefrescar: () => _refrescar(ref),
+        slivers: [
+          if (ficha.hasValue && ficha.error is SinRed)
+            const SliverToBoxAdapter(child: BannerSinRed()),
+          ...ficha.when(
+            skipError: ficha.hasValue,
+            data: (v) => [
+              SliverPadding(
+                padding: _lados,
+                sliver: SliverToBoxAdapter(child: _Cabecera(v)),
               ),
-            ),
-          ],
-        ),
-      ],
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                sliver: SliverToBoxAdapter(child: _Proceso(v.conteos)),
+              ),
+              _Ranking(vacante: v),
+            ],
+            loading: () => const [
+              SliverPadding(
+                padding: _lados,
+                sliver: SliverToBoxAdapter(child: _Cargando()),
+              ),
+            ],
+            error: (e, _) => [
+              SliverToBoxAdapter(
+                child: EstadoError(
+                  error: e is ErrorApi ? e : const Servidor(),
+                  alReintentar: () => e is NoEncontrado
+                      ? context.pop()
+                      : ref.invalidate(vacanteProvider(slug)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

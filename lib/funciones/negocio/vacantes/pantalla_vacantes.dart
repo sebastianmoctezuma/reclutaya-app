@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:reclutaya_app/funciones/negocio/comun/modelos/sucursales.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/inicio_core.dart';
+import 'package:reclutaya_app/funciones/negocio/sucursales/sucursales_vista.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/fila_vacante.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/por_sucursal.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
@@ -16,7 +20,12 @@ enum EstadoLista { sucursales, activas, cerradas }
 /// sucursales la pestaña se llama «Sucursales» (como en la web) y las activas se
 /// agrupan por sucursal.
 class PantallaVacantes extends ConsumerStatefulWidget {
-  const PantallaVacantes({super.key});
+  const PantallaVacantes({this.abrirSucursal, this.visita, super.key});
+
+  /// Llegar desde una sucursal del Inicio (8-oct): esta pestaña se abre con la hoja de
+  /// ESA sucursal. `visita` distingue un toque de otro a la misma sucursal.
+  final String? abrirSucursal;
+  final String? visita;
 
   @override
   ConsumerState<PantallaVacantes> createState() => _PantallaVacantesState();
@@ -25,6 +34,25 @@ class PantallaVacantes extends ConsumerStatefulWidget {
 class _PantallaVacantesState extends ConsumerState<PantallaVacantes> {
   /// null = el de entrada: «Sucursales» si la cuenta tiene varias, si no «Activas».
   EstadoLista? _elegida;
+
+  /// La visita ya atendida: la hoja se abre UNA vez por toque, no al volver a la pestaña.
+  String? _atendida;
+
+  /// Si se llegó desde una sucursal del Inicio, abre su hoja en cuanto están los datos.
+  void _abrirSiToca(Sucursales? datos) {
+    final id = widget.abrirSucursal;
+    final visita = '$id·${widget.visita}';
+    if (id == null || datos == null || _atendida == visita) return;
+    final s = datos.items.where((x) => x.id == id).firstOrNull;
+    _atendida = visita;
+    if (s == null) return;
+    if (_elegida != EstadoLista.sucursales) {
+      setState(() => _elegida = EstadoLista.sucursales);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(mostrarSucursal(context, s));
+    });
+  }
 
   Future<void> _refrescar(EstadoLista lista) async {
     ref
@@ -45,6 +73,12 @@ class _PantallaVacantesState extends ConsumerState<PantallaVacantes> {
   @override
   Widget build(BuildContext context) {
     final multi = ref.watch(yoProvider).value?.variasSucursales ?? false;
+    if (widget.abrirSucursal != null) {
+      final datos = ref.watch(sucursalesProvider).value;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _abrirSiToca(datos);
+      });
+    }
     var lista =
         _elegida ?? (multi ? EstadoLista.sucursales : EstadoLista.activas);
     if (!multi && lista == EstadoLista.sucursales) lista = EstadoLista.activas;

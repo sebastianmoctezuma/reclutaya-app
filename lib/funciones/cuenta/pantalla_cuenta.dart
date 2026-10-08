@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,7 @@ import 'package:reclutaya_app/nucleo/ui/chip.dart';
 import 'package:reclutaya_app/nucleo/ui/esqueleto.dart';
 import 'package:reclutaya_app/nucleo/ui/estados.dart';
 import 'package:reclutaya_app/nucleo/ui/logo_negocio.dart';
+import 'package:reclutaya_app/nucleo/ui/marca.dart';
 import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
 import 'package:reclutaya_app/nucleo/ui/tesela.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -194,10 +196,27 @@ class PantallaCuenta extends ConsumerWidget {
                   child: const Text('Cerrar todas las sesiones'),
                 ),
               ],
-              const SizedBox(height: 20),
-              const _Version(),
             ],
           ),
+        ),
+        // El pie (logo y versión) ABAJO, justo arriba del dock (8-oct): ocupa lo que
+        // sobra de la pantalla MENOS el relleno final de la página (que ya deja libre el
+        // dock), así no se esconde detrás. Con medidas que no cambian al desplazar.
+        SliverLayoutBuilder(
+          builder: (context, c) {
+            final abajo = MediaQuery.paddingOf(context).bottom + 24;
+            final sobra =
+                c.viewportMainAxisExtent - c.precedingScrollExtent - abajo;
+            return SliverToBoxAdapter(
+              child: SizedBox(
+                height: math.max(120, sobra),
+                child: const Align(
+                  alignment: Alignment.bottomCenter,
+                  child: _Version(),
+                ),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -242,16 +261,28 @@ class _Version extends StatelessWidget {
     }
   }
 
+  /// El pie de Cuenta (8-oct): el logo real de ReclutaYa (con su promesa) y la versión,
+  /// como el «Acerca de» de las apps de iOS. No compite con el logo del negocio.
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<String>(
-      future: _texto(),
-      builder: (context, s) => Center(
-        child: Text(
-          s.data ?? '',
-          style: Theme.of(context).textTheme.labelSmall!
-              .copyWith(color: context.t.tintaSuave),
-        ),
+    final tt = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        // Mínima: dentro del relleno de abajo, una columna «máxima» se estiraba y dejaba
+        // el logo ARRIBA del espacio en vez de abajo.
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const MarcaReclutaYa(ancho: 190),
+          const SizedBox(height: 12),
+          FutureBuilder<String>(
+            future: _texto(),
+            builder: (context, s) => Text(
+              s.data ?? '',
+              style: tt.labelSmall!.copyWith(color: context.t.tintaSuave),
+            ),
+          ),
+        ],
       ),
     );
   }

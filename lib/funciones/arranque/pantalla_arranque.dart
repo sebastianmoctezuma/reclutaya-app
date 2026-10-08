@@ -13,7 +13,6 @@ import 'package:reclutaya_app/funciones/negocio/novedades/controlador_avisos.dar
 import 'package:reclutaya_app/nucleo/sesion/arranque_core.dart';
 import 'package:reclutaya_app/nucleo/sesion/providers.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
-import 'package:reclutaya_app/nucleo/util/resultado.dart';
 import 'package:reclutaya_app/nucleo/vidrio/vidrio.dart';
 
 const _cierre = Duration(milliseconds: 380);
@@ -70,11 +69,11 @@ class _PantallaArranqueState extends ConsumerState<PantallaArranque>
     final sesion = ref.read(sesionProvider);
     String? tipo;
     if (sesion.autenticado) {
-      final r = await ref.read(repositorioProvider).yo();
-      if (r case Exito(:final valor)) {
-        tipo = valor.tipo;
-        if (valor.esNegocio) {
-          await ref.read(gestorCuentasProvider.notifier).recordarActiva(valor);
+      final yo = await yoAlArrancar(ref.read);
+      if (yo != null) {
+        tipo = yo.tipo;
+        if (yo.esNegocio) {
+          await ref.read(gestorCuentasProvider.notifier).recordarActiva(yo);
         }
       }
     }

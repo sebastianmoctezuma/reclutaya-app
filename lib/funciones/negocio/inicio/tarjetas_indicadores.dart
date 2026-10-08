@@ -120,18 +120,32 @@ class _Indicador extends StatelessWidget {
     };
     return Tarjeta(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      // Arriba el ícono con el cambio contra el periodo anterior a la derecha; abajo
+      // la etiqueta a todo el ancho, la cifra y su contexto (8-oct: con el cambio junto
+      // a la etiqueta, ésta se partía en dos renglones y el cambio quedaba flotando).
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Tesela(icono: icono, color: color, tam: 38),
-          const Spacer(),
-          Cifra(
-            valor: valor,
-            unidad: unidad,
-            etiqueta: etiqueta,
-            sub: sub,
-            delta: delta == null ? null : _Delta(delta!, unidadDelta),
+          Row(
+            children: [
+              Tesela(icono: icono, color: color, tam: 32),
+              const SizedBox(width: 8),
+              // En un teléfono angosto el cambio largo («12 días») se encoge, no se sale.
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: delta == null
+                      ? null
+                      : FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: _Delta(delta!, unidadDelta),
+                        ),
+                ),
+              ),
+            ],
           ),
+          const Spacer(),
+          Cifra(valor: valor, unidad: unidad, etiqueta: etiqueta, sub: sub),
         ],
       ),
     );

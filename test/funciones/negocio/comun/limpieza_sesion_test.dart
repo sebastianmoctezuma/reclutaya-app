@@ -87,23 +87,25 @@ void main() {
     expect(c.read(avisoAccesoProvider), 'Tu sesión terminó. Vuelve a entrar.');
   });
 
-  test(
-    'las fichas se sueltan sin oyentes: al volver se piden de nuevo',
-    () async {
-      final repo = RepositorioFalso();
-      final c = ProviderContainer(
-        overrides: [repositorioProvider.overrideWithValue(repo)],
-        retry: sinReintentos,
-      );
-      addTearDown(c.dispose);
-      var sub = c.listen(candidatoProvider('p1'), (_, _) {});
-      await c.read(candidatoProvider('p1').future);
-      sub.close();
-      await Future<void>.delayed(Duration.zero);
-      sub = c.listen(candidatoProvider('p1'), (_, _) {});
-      addTearDown(sub.close);
-      await c.read(candidatoProvider('p1').future);
-      expect(repo.llamadasCandidato, 2);
-    },
-  );
+  test('las fichas se sueltan pasado el rato de memoria: al volver se piden de nuevo', () async {
+    final repo = RepositorioFalso();
+    final c = ProviderContainer(
+      overrides: [
+        repositorioProvider.overrideWithValue(repo),
+        conservarFichaProvider.overrideWithValue(
+          const Duration(milliseconds: 10),
+        ),
+      ],
+      retry: sinReintentos,
+    );
+    addTearDown(c.dispose);
+    var sub = c.listen(candidatoProvider('p1'), (_, _) {});
+    await c.read(candidatoProvider('p1').future);
+    sub.close();
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+    sub = c.listen(candidatoProvider('p1'), (_, _) {});
+    addTearDown(sub.close);
+    await c.read(candidatoProvider('p1').future);
+    expect(repo.llamadasCandidato, 2);
+  });
 }

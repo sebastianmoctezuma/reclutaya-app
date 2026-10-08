@@ -9,6 +9,7 @@ import 'package:reclutaya_app/nucleo/plataforma/plataforma.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
 import 'package:reclutaya_app/nucleo/sesion/providers.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
+import 'package:reclutaya_app/nucleo/ui/marca.dart';
 import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -115,7 +116,7 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
                             child: const Text('Cancelar'),
                           ),
                         ),
-                      const _Marca(),
+                      const MarcaReclutaYa(),
                       const SizedBox(height: 22),
                       Text(
                         agregando ? 'Agregar cuenta' : 'Bienvenido de vuelta',
@@ -221,40 +222,6 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _Marca extends StatelessWidget {
-  const _Marca();
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Image.asset('assets/imagenes/isotipo.png', width: 44, height: 44),
-        const SizedBox(width: 10),
-        Text.rich(
-          TextSpan(
-            text: 'Recluta',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w800,
-              fontSize: 26,
-              letterSpacing: -0.8,
-              color: t.verde,
-            ),
-            children: [
-              TextSpan(
-                text: 'Ya',
-                style: TextStyle(color: t.naranja),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

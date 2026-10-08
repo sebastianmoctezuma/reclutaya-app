@@ -1,15 +1,12 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
-import 'package:reclutaya_app/nucleo/vidrio/vidrio.dart';
 
-/// La tarjeta de contenido de la casa, de vidrio (decisión del dueño, 6-oct): el
-/// fondo se desenfoca detrás, un velo translúcido y un borde de luz arriba, como las
-/// tarjetas de las apps de banca. Es vidrio dibujado por Flutter (un desenfoque por
-/// tarjeta), no el nativo: el nativo en cada tarjeta de una lista pesa al desplazar.
-/// Con «Reducir movimiento» o «Aumentar contraste», sólida.
+/// La tarjeta de contenido de la casa, SÓLIDA como las agrupadas de iOS (8-oct):
+/// blanca (gris oscuro en modo oscuro), un borde fino y una sombra suave. Antes era
+/// de vidrio con un desenfoque por tarjeta (6-oct); sobre el fondo se veía lavada, el
+/// borde blanco la confundía con el fondo y cada desenfoque costaba al desplazar una
+/// lista. El vidrio se queda para lo que flota: la barra de pestañas y las hojas.
 class Tarjeta extends StatelessWidget {
   const Tarjeta({
     required this.child,
@@ -37,7 +34,7 @@ class Tarjeta extends StatelessWidget {
   }
 }
 
-/// La superficie de vidrio de las tarjetas, reutilizable con otra forma o un tinte.
+/// La superficie de las tarjetas, reutilizable con otra forma o un tinte.
 class SuperficieVidrio extends StatelessWidget {
   const SuperficieVidrio({
     required this.forma,
@@ -49,24 +46,18 @@ class SuperficieVidrio extends StatelessWidget {
   final OutlinedBorder forma;
   final Widget child;
 
-  /// Algo que se pinta sobre el velo (p. ej. la mancha de color de una sucursal).
+  /// Algo que se pinta sobre el fondo (p. ej. la mancha de color de una sucursal).
   final Decoration? decoracion;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final solido = vidrioSolido(context);
-    final velo = solido
-        ? t.tarjeta
-        // Casi blanca (como las tarjetas agrupadas de iOS): se distingue del fondo
-        // con tinte verde y aun así deja ver un poco lo que pasa detrás.
-        : t.tarjeta.withValues(alpha: t.esOscuro ? 0.72 : 0.88);
     final cuerpo = Material(
-      color: velo,
+      color: t.tarjeta,
       shape: forma.copyWith(
         side: BorderSide(
-          color: t.sobreVerde.withValues(alpha: t.esOscuro ? 0.12 : 0.9),
-          width: 0.8,
+          color: t.linea.withValues(alpha: t.esOscuro ? 1 : 0.75),
+          width: 0.6,
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -74,19 +65,10 @@ class SuperficieVidrio extends StatelessWidget {
           ? child
           : Ink(decoration: decoracion, child: child),
     );
-    final conVidrio = solido
-        ? cuerpo
-        : ClipPath(
-            clipper: ShapeBorderClipper(shape: forma),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-              child: cuerpo,
-            ),
-          );
-    // Sombra suave por fuera del recorte: separa la tarjeta del fondo.
+    // Sombra suave por fuera: separa la tarjeta del fondo.
     return DecoratedBox(
       decoration: ShapeDecoration(shape: forma, shadows: sombraSm(t)),
-      child: conVidrio,
+      child: cuerpo,
     );
   }
 }

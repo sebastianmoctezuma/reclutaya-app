@@ -116,8 +116,7 @@ class TarjetaSucursal extends StatelessWidget {
               spacing: 6,
               runSpacing: 6,
               children: [
-                for (final m in s.miembros.take(6))
-                  Iniciales(m.iniciales, colorIdx: s.colorIdx),
+                for (final m in s.miembros.take(6)) Iniciales(m.iniciales),
                 if (s.miembros.length > 6)
                   Text('+${s.miembros.length - 6}', style: tt.labelMedium),
               ],
@@ -165,12 +164,7 @@ class FilaEquipo extends StatelessWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: t.tarjeta, width: 2),
                       ),
-                      child: Iniciales(
-                        p.iniciales,
-                        colorIdx: p.sucursales.isEmpty
-                            ? 0
-                            : p.sucursales.first.colorIdx,
-                      ),
+                      child: Iniciales(p.iniciales),
                     ),
                   ),
               ],
@@ -491,13 +485,7 @@ class _HojaEquipo extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                   child: Row(
                     children: [
-                      Iniciales(
-                        p.iniciales,
-                        colorIdx: p.sucursales.isEmpty
-                            ? 0
-                            : p.sucursales.first.colorIdx,
-                        tam: 34,
-                      ),
+                      Iniciales(p.iniciales, tam: 34),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(

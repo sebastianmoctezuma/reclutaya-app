@@ -7,11 +7,14 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:reclutaya_app/nucleo/plataforma/plataforma.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
+import 'package:reclutaya_app/nucleo/ui/boton_redondo.dart';
 import 'package:reclutaya_app/nucleo/vidrio/vidrio.dart';
 
-/// Esquinas continuas en iOS (como las de Apple), circulares en Android.
+/// Esquinas de iPhone en iOS (la superelipse de Apple), circulares en Android.
+/// Antes era `ContinuousRectangleBorder` con el radio por 2.2: no es la curva de
+/// Apple y en tarjetas chicas abombaba los lados (8-oct, «se ven raras»).
 OutlinedBorder formaTarjeta(double r) => Plataforma.esIOS
-    ? ContinuousRectangleBorder(borderRadius: BorderRadius.circular(r * 2.2))
+    ? RoundedSuperellipseBorder(borderRadius: BorderRadius.circular(r))
     : RoundedRectangleBorder(borderRadius: BorderRadius.circular(r));
 
 void hapticoSeleccion() => HapticFeedback.selectionClick();
@@ -28,6 +31,8 @@ class PaginaConTitulo extends StatefulWidget {
     this.accion,
     this.alRefrescar,
     this.subtitulo,
+    this.cerrar = false,
+    this.encabezado,
     super.key,
   });
 
@@ -38,6 +43,14 @@ class PaginaConTitulo extends StatefulWidget {
   final List<Widget> slivers;
   final Widget? accion;
   final Future<void> Function()? alRefrescar;
+
+  /// Pantalla que sube como hoja (8-oct): en vez de la flecha a la izquierda, una cruz
+  /// a la derecha.
+  final bool cerrar;
+
+  /// En lugar del título en texto (p. ej. el logo de ReclutaYa en el Inicio). El
+  /// `titulo` se sigue usando para el lector de pantalla.
+  final Widget? encabezado;
 
   @override
   State<PaginaConTitulo> createState() => _PaginaConTituloState();
@@ -111,11 +124,24 @@ class _PaginaConTituloState extends State<PaginaConTitulo> {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          widget.titulo,
-                          style: Theme.of(context).textTheme.headlineMedium!
-                              .copyWith(color: t.sobreVerde),
-                        ),
+                        child: widget.encabezado == null
+                            ? Text(
+                                widget.titulo,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium!
+                                    .copyWith(color: t.sobreVerde),
+                              )
+                            : Semantics(
+                                header: true,
+                                label: widget.titulo,
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: ExcludeSemantics(
+                                    child: widget.encabezado,
+                                  ),
+                                ),
+                              ),
                       ),
                       ?widget.accion,
                     ],
@@ -178,8 +204,20 @@ class _PaginaConTituloState extends State<PaginaConTitulo> {
               },
             ),
           ),
-          if (puedeVolver)
+          if (puedeVolver && !widget.cerrar)
             Positioned(top: arriba + 8, left: 14, child: const _Regresar()),
+          if (puedeVolver && widget.cerrar)
+            Positioned(
+              top: arriba + 8,
+              right: 14,
+              child: BotonRedondo(
+                icono: Plataforma.esIOS
+                    ? CupertinoIcons.xmark
+                    : Icons.close_rounded,
+                etiqueta: 'Cerrar',
+                alTocar: () => Navigator.of(context).maybePop(),
+              ),
+            ),
         ],
       ),
     );

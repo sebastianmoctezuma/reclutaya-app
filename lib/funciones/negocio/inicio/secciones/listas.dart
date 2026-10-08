@@ -6,6 +6,7 @@ import 'package:reclutaya_app/funciones/negocio/comun/presentacion.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/inicio_core.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/secciones/comunes.dart';
 import 'package:reclutaya_app/funciones/negocio/sucursales/piezas.dart';
+import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 import 'package:reclutaya_app/nucleo/ui/chip.dart';
 import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
@@ -14,7 +15,8 @@ void _ir(BuildContext context, String ruta) =>
     GoRouter.maybeOf(context)?.go(ruta);
 
 /// «Tus sucursales»: un carrusel con las tarjetas teñidas de la vista Sucursales (logo,
-/// «Principal», vacantes y lo de la semana). Tocar una lleva a la pestaña Sucursales.
+/// «Principal», vacantes y lo de la semana). Tocar una abre la pestaña Sucursales con
+/// ESA sucursal abierta.
 /// Sin «Agregar sucursal»: es pura vista.
 class TusSucursales extends StatelessWidget {
   const TusSucursales({required this.sucursales, super.key});
@@ -56,7 +58,12 @@ class _MiniSucursal extends StatelessWidget {
     return SuperficieSucursal(
       colorIdx: s.colorIdx,
       padding: const EdgeInsets.all(14),
-      alTocar: () => _ir(context, '/vacantes'),
+      // Lleva a Sucursales CON esta sucursal abierta (8-oct); `t` hace única cada
+      // visita, para que volver a tocar la misma la vuelva a abrir.
+      alTocar: () => _ir(
+        context,
+        '/vacantes?sucursal=${s.id}&t=${DateTime.now().millisecondsSinceEpoch}',
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -448,13 +455,13 @@ class VacantesEnCurso extends StatelessWidget {
                   'Candidatos',
                   Text('${v.candidatos}', style: tt.labelLarge),
                 ),
-                _Dato(
-                  'Siguiente paso',
-                  Text(
-                    v.siguientePaso ?? '—',
-                    style: tt.labelLarge!.copyWith(color: t.verdeProfundo),
+                // El siguiente paso es una ACCIÓN y se ve como tal (8-oct, principios
+                // de Apple): botón teñido con chevron, no un dato más de la tabla.
+                if (v.siguientePaso != null)
+                  _BotonSiguiente(
+                    texto: v.siguientePaso!,
+                    alTocar: () => _ir(context, '/vacantes/${v.slug}'),
                   ),
-                ),
               ],
             ),
           ),
@@ -563,6 +570,62 @@ class _Dato extends StatelessWidget {
           ),
           valor,
         ],
+      ),
+    );
+  }
+}
+
+/// El siguiente paso de una vacante como botón teñido de iOS: a todo lo ancho al pie
+/// de la tarjeta, fondo verde claro, texto en verde profundo y chevron.
+class _BotonSiguiente extends StatelessWidget {
+  const _BotonSiguiente({required this.texto, required this.alTocar});
+
+  final String texto;
+  final VoidCallback alTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final tt = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+      child: Semantics(
+        button: true,
+        label: texto,
+        child: Material(
+          color: t.verdeBrillo,
+          shape: formaTarjeta(12),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () {
+              hapticoLigero();
+              alTocar();
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: ExcludeSemantics(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        texto,
+                        style: tt.labelLarge!.copyWith(
+                          color: t.verdeProfundo,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 22,
+                      color: t.verdeProfundo,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

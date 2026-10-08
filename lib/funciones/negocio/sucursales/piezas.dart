@@ -112,31 +112,27 @@ class SuperficieSucursal extends StatelessWidget {
   }
 }
 
-/// Las iniciales de una persona del equipo en un círculo del color de su sucursal.
+/// Las iniciales de una persona del equipo. Siempre IGUAL, en todas las sucursales donde
+/// aparezca (8-oct): antes tomaban el color de cada tarjeta y la misma persona se veía
+/// verde en una, naranja en otra y azul en otra. El estilo es el de los avatares de la
+/// app (verde claro con iniciales en verde profundo).
 class Iniciales extends StatelessWidget {
-  const Iniciales(
-    this.texto, {
-    required this.colorIdx,
-    this.tam = 30,
-    super.key,
-  });
+  const Iniciales(this.texto, {this.tam = 30, super.key});
 
   final String texto;
-  final int colorIdx;
   final double tam;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final color = colorSucursal(colorIdx, oscuro: t.esOscuro);
     return Container(
       width: tam,
       height: tam,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: Color.alphaBlend(color.withValues(alpha: 0.14), t.tarjeta),
-        border: Border.all(color: color.withValues(alpha: 0.45)),
+        color: t.verdeBrillo,
+        border: Border.all(color: t.verde.withValues(alpha: 0.35)),
       ),
       child: Text(
         texto,
@@ -144,7 +140,7 @@ class Iniciales extends StatelessWidget {
           fontFamily: 'Poppins',
           fontWeight: FontWeight.w700,
           fontSize: tam * 0.33,
-          color: color,
+          color: t.verdeProfundo,
         ),
       ),
     );

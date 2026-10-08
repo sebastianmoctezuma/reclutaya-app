@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
 import 'package:reclutaya_app/nucleo/red/politica_reintento.dart';
 import 'package:reclutaya_app/nucleo/util/resultado.dart';
@@ -56,6 +57,9 @@ class ClienteApi {
     required int intento,
   }) async {
     final Response<dynamic> res;
+    // Solo en desarrollo (8-oct): ruta, estado y tiempo de cada petición, para medir
+    // contra producción desde el simulador. Nunca el token ni los cuerpos.
+    final reloj = kDebugMode ? (Stopwatch()..start()) : null;
     try {
       res = await _dio.request<dynamic>(
         ruta,
@@ -79,6 +83,11 @@ class ClienteApi {
     }
 
     final status = res.statusCode ?? 0;
+    if (reloj != null) {
+      debugPrint(
+        'API $metodo ${Uri.parse(ruta).path} $status ${reloj.elapsedMilliseconds} ms',
+      );
+    }
     if (status >= 200 && status < 300) {
       final datos = res.data;
       if (datos is Map<String, dynamic>) return Exito(datos);

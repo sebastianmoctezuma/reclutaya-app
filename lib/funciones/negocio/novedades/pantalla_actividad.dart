@@ -16,7 +16,7 @@ import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
 import 'package:reclutaya_app/nucleo/ui/tesela.dart';
 
 /// La Actividad (7-oct), como la de la web pero de la app: lo de la semana agrupado
-/// por día, con un resumen arriba. Cada evento dice SIEMPRE la vacante y la sucursal;
+/// por día (el resumen de arriba se quitó el 8-oct, a pedido del dueño). Cada evento dice SIEMPRE la vacante y la sucursal;
 /// lo que llegó desde la última vez lleva su punto. Tocar uno abre al candidato (o la
 /// vacante, si es el ranking listo).
 class PantallaActividad extends ConsumerWidget {
@@ -30,6 +30,7 @@ class PantallaActividad extends ConsumerWidget {
     final novedades = ref.watch(novedadesProvider);
     return PaginaConTitulo(
       titulo: 'Actividad',
+      cerrar: true,
       alRefrescar: () async {
         ref.invalidate(novedadesProvider);
         try {
@@ -74,10 +75,6 @@ class PantallaActividad extends ConsumerWidget {
     }
     final nuevas = nuevasDesde(n.items, vistoAntes).toSet();
     return [
-      SliverPadding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-        sliver: SliverToBoxAdapter(child: _Resumen(conteoPorTipo(n.items))),
-      ),
       for (final (dia, lista) in porDia(n.items, DateTime.now()))
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -126,57 +123,6 @@ class PantallaActividad extends ConsumerWidget {
   'entrevista_pronto' => (Icons.videocam_rounded, t.azul),
   _ => (Icons.person_add_alt_1_rounded, t.azul),
 };
-
-/// Arriba: cuántos de cada cosa en la semana, como los chips de la Actividad web.
-class _Resumen extends StatelessWidget {
-  const _Resumen(this.conteo);
-
-  final Map<String, int> conteo;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final tt = Theme.of(context).textTheme;
-    const nombres = {
-      'postulacion': ('candidato', 'candidatos'),
-      'video': ('video', 'videos'),
-      'documento': ('documento', 'documentos'),
-      'test': ('test', 'tests'),
-      'ranking': ('ranking', 'rankings'),
-      'expediente_documento': ('papel', 'papeles'),
-      'expediente_completo': ('expediente', 'expedientes'),
-      'entrevista_pronto': ('entrevista', 'entrevistas'),
-    };
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final tipo in nombres.keys)
-          if ((conteo[tipo] ?? 0) > 0)
-            Tarjeta(
-              padding: const EdgeInsets.fromLTRB(8, 8, 14, 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Tesela(
-                    icono: _iconoDe(tipo, t).$1,
-                    color: _iconoDe(tipo, t).$2,
-                    tam: 26,
-                  ),
-                  const SizedBox(width: 8),
-                  Text('${conteo[tipo]}', style: tt.titleMedium),
-                  const SizedBox(width: 4),
-                  Text(
-                    conteo[tipo] == 1 ? nombres[tipo]!.$1 : nombres[tipo]!.$2,
-                    style: tt.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-      ],
-    );
-  }
-}
 
 class _Evento extends StatelessWidget {
   const _Evento(this.e, {required this.nueva});

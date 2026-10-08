@@ -56,6 +56,7 @@ class RepositorioFalso implements RepositorioNegocio {
   final cambios = <(String, bool)>[];
   final bajas = <String>[];
   int llamadasCandidato = 0;
+  int llamadasVacante = 0;
   int llamadasRanking = 0;
   int llamadasYo = 0;
   int llamadasInicio = 0;
@@ -85,7 +86,10 @@ class RepositorioFalso implements RepositorioNegocio {
   Future<Resultado<List<VacanteCerrada>>> vacantesCerradas() => _r(cerradasR);
 
   @override
-  Future<Resultado<VacanteFicha>> vacante(String slug) => _r(vacanteR);
+  Future<Resultado<VacanteFicha>> vacante(String slug) {
+    llamadasVacante++;
+    return _r(vacanteR);
+  }
 
   @override
   Future<Resultado<Ranking>> ranking(String slug) {

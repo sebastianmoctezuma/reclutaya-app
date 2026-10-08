@@ -130,6 +130,9 @@ const coloresSucursal = <({Color luz, Color oscuro})>[
 
 const _sombraTinte = Color(0xFF14281E);
 
+/// El oscurecido de lo de abajo mientras una pantalla crece o se encoge (zoom, 8-oct).
+const veloTransicion = Color(0x2E000000);
+
 List<BoxShadow> sombraSm(Tokens t) => [
   BoxShadow(
     color: _sombraTinte.withValues(alpha: t.esOscuro ? 0.3 : 0.06),

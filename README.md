@@ -64,6 +64,15 @@ Sube `build/ios/ipa/*.ipa` con Transporter (o abre `build/ios/archive/Runner.xca
 Xcode → Distribute App). `<N>` debe subir en cada envío. Versión visible: `version` en
 `pubspec.yaml`.
 
+**Estado (8-oct-2026):** la compilación **1.0.0 (4)** está en TestFlight, procesada por
+Apple, con el grupo interno «Reclutaya app» (5 testers: Antonio con sus dos correos, Job,
+Sergio y Sebastián). Se instaló en un iPhone real con el ícono nuevo y el primer teléfono
+ya quedó registrado para avisos. La siguiente entrega debe usar `--build-number=5` o más.
+
+**Ícono:** sale de `assets/imagenes/icono_1024.png` (iOS, sin transparencia: iOS pone sus
+propias esquinas) e `icono_frontal.png` (primer plano del ícono adaptable de Android) con
+`dart run flutter_launcher_icons`; la configuración vive en `flutter_launcher_icons.yaml`.
+
 ## Estructura
 
 ```

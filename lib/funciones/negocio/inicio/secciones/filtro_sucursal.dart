@@ -23,33 +23,18 @@ class FiltroSucursalPastilla extends ConsumerWidget {
     var elegido = actual;
     var cambio = false;
     if (Plataforma.esIOS) {
+      // Hoja SÓLIDA con la forma de la de iOS (8-oct): la nativa es translúcida y
+      // sobre los indicadores no se leía.
       await showCupertinoModalPopup<void>(
         context: context,
-        builder: (c) => CupertinoActionSheet(
-          title: const Text('Ver indicadores de'),
-          actions: [
-            CupertinoActionSheetAction(
-              onPressed: () {
-                elegido = null;
-                cambio = true;
-                Navigator.pop(c);
-              },
-              child: const Text('Todas las sucursales'),
-            ),
-            for (final s in sucursales)
-              CupertinoActionSheetAction(
-                onPressed: () {
-                  elegido = s.id;
-                  cambio = true;
-                  Navigator.pop(c);
-                },
-                child: Text(s.nombre),
-              ),
-          ],
-          cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.pop(c),
-            child: const Text('Cancelar'),
-          ),
+        builder: (c) => _HojaFiltro(
+          sucursales: sucursales,
+          actual: actual,
+          alElegir: (id) {
+            elegido = id;
+            cambio = true;
+            Navigator.pop(c);
+          },
         ),
       );
     } else {
@@ -145,6 +130,124 @@ class _Punto extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorSucursal(colorIdx, oscuro: context.t.esOscuro),
         shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+/// La hoja del filtro en iOS: opciones arriba y «Cancelar» aparte, como la de acciones
+/// de iOS, pero sólida. La elegida lleva palomita; cada sucursal, su punto de color.
+class _HojaFiltro extends StatelessWidget {
+  const _HojaFiltro({
+    required this.sucursales,
+    required this.actual,
+    required this.alElegir,
+  });
+
+  final List<SucursalInicio> sucursales;
+  final String? actual;
+  final ValueChanged<String?> alElegir;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final tt = Theme.of(context).textTheme;
+    final forma = formaTarjeta(16);
+    Widget opcion(String? id, String nombre, {int? colorIdx}) {
+      final elegida = id == actual;
+      return Semantics(
+        button: true,
+        selected: elegida,
+        child: InkWell(
+          onTap: () {
+            hapticoSeleccion();
+            alElegir(id);
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+            child: Row(
+              children: [
+                if (colorIdx != null) ...[
+                  _Punto(colorIdx),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Text(
+                    nombre,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tt.bodyLarge!.copyWith(
+                      color: t.tinta,
+                      fontWeight: elegida ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+                if (elegida)
+                  Icon(CupertinoIcons.checkmark_alt, size: 20, color: t.verde),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 0, 10, 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Material(
+              color: t.tarjeta,
+              shape: forma,
+              clipBehavior: Clip.antiAlias,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
+                        child: Text(
+                          'Ver indicadores de',
+                          style: tt.labelMedium!.copyWith(color: t.tintaSuave),
+                        ),
+                      ),
+                      Divider(height: 1, color: t.linea),
+                      opcion(null, 'Todas las sucursales'),
+                      for (final s in sucursales) ...[
+                        Divider(height: 1, indent: 18, color: t.linea),
+                        opcion(s.id, s.nombre, colorIdx: s.colorIdx),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Material(
+              color: t.tarjeta,
+              shape: forma,
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => Navigator.pop(context),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: Center(
+                    child: Text(
+                      'Cancelar',
+                      style: tt.titleMedium!.copyWith(color: t.verdeProfundo),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

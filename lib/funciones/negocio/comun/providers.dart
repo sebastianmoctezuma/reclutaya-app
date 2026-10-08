@@ -4,6 +4,7 @@ import 'dart:async';
 // no se puede anotar, y el genérico en la llamada ya lo deja claro.
 // ignore_for_file: specify_nonobvious_property_types
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/ficha_candidato.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/inicio.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/novedades.dart';
@@ -72,6 +73,24 @@ final novedadesProvider = FutureProvider<Novedades>(
           .valorOLanza,
 );
 
+/// Al abrir la app con sesión (8-oct): mientras se confirma quién es, ya se piden el
+/// Inicio y la campana, y se usa el MISMO `/yo` que leerá el Inicio. Antes el arranque
+/// pedía su propio `/yo`, el Inicio lo repetía y sus datos esperaban a que terminara
+/// el arranque: unos 2 s en fila. `null` si `/yo` falla (el arranque decide igual que
+/// antes). Recibe el `read` de quien llama (pantalla o contenedor de prueba).
+Future<Yo?> yoAlArrancar(T Function<T>(ProviderListenable<T>) leer) async {
+  void ignorar(Object _) {}
+  unawaited(leer(inicioProvider.future).then<void>((_) {}, onError: ignorar));
+  unawaited(
+    leer(novedadesProvider.future).then<void>((_) {}, onError: ignorar),
+  );
+  try {
+    return await leer(yoProvider.future);
+  } on Object {
+    return null;
+  }
+}
+
 const _llaveVistoHasta = 'ry_novedades_visto_hasta';
 
 /// Hasta cuándo vio el dueño las novedades, guardado en el teléfono.
@@ -103,23 +122,47 @@ final vacantesCerradasProvider = FutureProvider<List<VacanteCerrada>>(
       (await ref.watch(repositorioProvider).vacantesCerradas()).valorOLanza,
 );
 
-// Las fichas se SUELTAN sin oyentes (autoDispose): al volver se piden de nuevo,
-// con URLs firmadas frescas, y la memoria no crece con cada ficha abierta.
-final vacanteProvider = FutureProvider.autoDispose.family<VacanteFicha, String>(
-  (ref, slug) async =>
-      (await ref.watch(repositorioProvider).vacante(slug)).valorOLanza,
+/// Cuánto se queda una ficha en memoria después de salir de ella (8-oct). Es un
+/// provider para que las pruebas lo acorten.
+final conservarFichaProvider = Provider<Duration>(
+  (ref) => const Duration(minutes: 5),
 );
 
-final rankingProvider = FutureProvider.autoDispose.family<Ranking, String>(
-  (ref, slug) async =>
-      (await ref.watch(repositorioProvider).ranking(slug)).valorOLanza,
+/// Las fichas se sueltan cuando nadie las ve, pero NO al instante: se quedan
+/// [conservarFichaProvider] por si se regresa (del candidato al ranking, o a la misma
+/// vacante), y al volver se ven sin esperar; la pantalla las actualiza por detrás
+/// (`RevalidarAlEntrar`). Así la memoria no crece con cada ficha abierta y las URLs
+/// firmadas no se quedan viejas: la del candidato se vuelve a pedir si una falla.
+void _conservarAlSalir(Ref ref) {
+  final enlace = ref.keepAlive();
+  final espera = ref.read(conservarFichaProvider);
+  Timer? soltar;
+  ref
+    ..onCancel(() => soltar = Timer(espera, enlace.close))
+    ..onResume(() => soltar?.cancel())
+    ..onDispose(() => soltar?.cancel());
+}
+
+final vacanteProvider = FutureProvider.autoDispose.family<VacanteFicha, String>(
+  (ref, slug) async {
+    _conservarAlSalir(ref);
+    return (await ref.watch(repositorioProvider).vacante(slug)).valorOLanza;
+  },
 );
+
+final rankingProvider = FutureProvider.autoDispose.family<Ranking, String>((
+  ref,
+  slug,
+) async {
+  _conservarAlSalir(ref);
+  return (await ref.watch(repositorioProvider).ranking(slug)).valorOLanza;
+});
 
 final candidatoProvider = FutureProvider.autoDispose
-    .family<FichaCandidato, String>(
-      (ref, id) async =>
-          (await ref.watch(repositorioProvider).candidato(id)).valorOLanza,
-    );
+    .family<FichaCandidato, String>((ref, id) async {
+      _conservarAlSalir(ref);
+      return (await ref.watch(repositorioProvider).candidato(id)).valorOLanza;
+    });
 
 /// Al cerrar sesión Y al entrar: no queda NADA en memoria de otra cuenta. Se limpia
 /// también al ENTRAR porque, al salir, las pantallas aún montadas vuelven a pedir sus

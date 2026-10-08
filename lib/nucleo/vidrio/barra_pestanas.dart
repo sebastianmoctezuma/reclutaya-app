@@ -11,11 +11,16 @@ class PestanaItem {
     required this.icono,
     required this.iconoActivo,
     required this.etiqueta,
+    this.imagen,
   });
 
   final IconData icono;
   final IconData iconoActivo;
   final String etiqueta;
+
+  /// En lugar del ícono, una imagen (el logo del negocio en «Cuenta», como la foto de
+  /// perfil de Instagram). Recibe si la pestaña está activa.
+  final Widget Function({required bool activa})? imagen;
 }
 
 /// El dock: en iPhone con iOS 26, la barra de pestañas NATIVA de Apple
@@ -29,6 +34,7 @@ class BarraPestanas extends StatelessWidget {
     required this.alCambiar,
     required this.items,
     this.alMantener,
+    this.compacta = false,
     super.key,
   });
 
@@ -40,6 +46,15 @@ class BarraPestanas extends StatelessWidget {
   /// en la barra propia: la de vidrio nativo de iOS 26 no la reporta a Flutter.
   final ValueChanged<int>? alMantener;
 
+  /// Al bajar por una lista (8-oct): más chica y sin los nombres. No desaparece: se
+  /// sigue pudiendo cambiar de pestaña.
+  final bool compacta;
+
+  static const _duracion = Duration(milliseconds: 260);
+
+  /// Cuánto se encoge al compactarse.
+  static const _escala = 0.82;
+
   void _tocar(int i) {
     hapticoSeleccion();
     alCambiar(i);
@@ -48,30 +63,22 @@ class BarraPestanas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
-    if (Plataforma.esIOS && vidrioNativoDisponible && !vidrioSolido(context)) {
-      return SafeArea(
-        top: false,
-        minimum: const EdgeInsets.only(bottom: 6),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 22),
-          child: LiquidGlassNavigationBar(
-            currentIndex: indice,
-            onTap: _tocar,
-            activeColor: t.verdeProfundo,
-            inactiveColor: t.tintaSuave,
-            items: [
-              for (final p in items)
-                LiquidGlassNavItem(
-                  icon: Icon(p.icono),
-                  activeIcon: Icon(p.iconoActivo),
-                  label: p.etiqueta,
-                ),
-            ],
-          ),
-        ),
+    if (Plataforma.esIOS) {
+      // Se ENCOGE con una escala (8-oct): la hace la GPU y no rehace la barra en cada
+      // cuadro. La nativa es una vista de iOS incrustada: cambiarle el tamaño cuadro
+      // por cuadro la hacía ir a tirones. Con «Reducir movimiento», directo.
+      return AnimatedScale(
+        scale: compacta ? _escala : 1,
+        alignment: Alignment.bottomCenter,
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : _duracion,
+        curve: Curves.easeOutCubic,
+        child: vidrioNativoDisponible && !vidrioSolido(context)
+            ? _nativa(context)
+            : _Capsula(this),
       );
     }
-    if (Plataforma.esIOS) return _Capsula(this);
     return NavigationBar(
       selectedIndex: indice,
       onDestinationSelected: _tocar,
@@ -85,6 +92,36 @@ class BarraPestanas extends StatelessWidget {
             label: p.etiqueta,
           ),
       ],
+    );
+  }
+}
+
+extension on BarraPestanas {
+  /// La barra NATIVA de iOS 26. Compacta, sin nombres: el ícono queda al centro. El
+  /// alto se fija para que la vista nativa no cambie de tamaño (solo la escala).
+  Widget _nativa(BuildContext context) {
+    final t = context.t;
+    return SafeArea(
+      top: false,
+      minimum: const EdgeInsets.only(bottom: 6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 22),
+        child: LiquidGlassNavigationBar(
+          currentIndex: indice,
+          onTap: _tocar,
+          activeColor: t.verdeProfundo,
+          inactiveColor: t.tintaSuave,
+          height: 64,
+          items: [
+            for (final p in items)
+              LiquidGlassNavItem(
+                icon: p.imagen?.call(activa: false) ?? Icon(p.icono),
+                activeIcon: p.imagen?.call(activa: true) ?? Icon(p.iconoActivo),
+                label: compacta ? null : p.etiqueta,
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -157,6 +194,7 @@ class _Capsula extends StatelessWidget {
                                     item: barra.items[i],
                                     activa: i == barra.indice,
                                     estilo: estilo,
+                                    compacta: barra.compacta,
                                   ),
                                 ),
                               ),
@@ -180,11 +218,13 @@ class _Pestana extends StatelessWidget {
     required this.item,
     required this.activa,
     required this.estilo,
+    required this.compacta,
   });
 
   final PestanaItem item;
   final bool activa;
   final TextStyle estilo;
+  final bool compacta;
 
   @override
   Widget build(BuildContext context) {
@@ -194,23 +234,36 @@ class _Pestana extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          AnimatedScale(
-            scale: activa ? 1.08 : 1,
-            duration: const Duration(milliseconds: 220),
-            child: Icon(
-              activa ? item.iconoActivo : item.icono,
-              color: color,
-              size: 23,
+          // Compacta: el nombre se desvanece y el ícono baja al centro (implícitos y
+          // baratos: sin reconstruir la barra en cada cuadro).
+          AnimatedSlide(
+            offset: compacta ? const Offset(0, 0.3) : Offset.zero,
+            duration: BarraPestanas._duracion,
+            curve: Curves.easeOutCubic,
+            child: AnimatedScale(
+              scale: activa ? 1.08 : 1,
+              duration: const Duration(milliseconds: 220),
+              child:
+                  item.imagen?.call(activa: activa) ??
+                  Icon(
+                    activa ? item.iconoActivo : item.icono,
+                    color: color,
+                    size: 23,
+                  ),
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            item.etiqueta,
-            maxLines: 1,
-            style: estilo.copyWith(
-              color: color,
-              fontSize: 10.5,
-              fontWeight: activa ? FontWeight.w700 : FontWeight.w600,
+          AnimatedOpacity(
+            opacity: compacta ? 0 : 1,
+            duration: BarraPestanas._duracion,
+            child: Text(
+              item.etiqueta,
+              maxLines: 1,
+              style: estilo.copyWith(
+                color: color,
+                fontSize: 10.5,
+                fontWeight: activa ? FontWeight.w700 : FontWeight.w600,
+              ),
             ),
           ),
         ],
