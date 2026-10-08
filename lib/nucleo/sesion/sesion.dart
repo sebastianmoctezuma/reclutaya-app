@@ -1,4 +1,5 @@
 import 'package:reclutaya_app/nucleo/red/cliente_api.dart';
+import 'package:reclutaya_app/nucleo/sesion/acceso_social_core.dart';
 import 'package:reclutaya_app/nucleo/util/resultado.dart';
 
 /// La sesión de la persona. La implementación real envuelve a Supabase; las
@@ -10,6 +11,14 @@ abstract class Sesion implements ProveedorToken {
   Stream<bool> get cambios;
 
   Future<Resultado<void>> entrar(String correo, String contrasena);
+
+  /// Entrar con el comprobante de Google o Apple (8-oct). `nonce` es el CRUDO; Google o
+  /// Apple recibieron su SHA-256 (`acceso_social_core.dart`).
+  Future<Resultado<void>> entrarConToken({
+    required ProveedorSocial proveedor,
+    required String idToken,
+    required String nonce,
+  });
 
   Future<void> salir();
 

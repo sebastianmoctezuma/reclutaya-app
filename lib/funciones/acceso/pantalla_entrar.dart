@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'package:reclutaya_app/funciones/cuentas/gestor_cuentas.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/plataforma/plataforma.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
+import 'package:reclutaya_app/nucleo/sesion/acceso_social_core.dart';
 import 'package:reclutaya_app/nucleo/sesion/providers.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 import 'package:reclutaya_app/nucleo/ui/marca.dart';
@@ -201,6 +204,23 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
                               )
                             : const Text('Entrar'),
                       ),
+                      // Google y Apple (8-oct): otra puerta a una cuenta que YA existe.
+                      // Mismo alto que «Entrar»; Apple solo en iPhone (en Android
+                      // necesitaría su flujo web).
+                      const SizedBox(height: 18),
+                      const _Separador(),
+                      const SizedBox(height: 18),
+                      if (!Plataforma.esAndroid) ...[
+                        _BotonSocial(
+                          proveedor: ProveedorSocial.apple,
+                          habilitado: !cargando,
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                      _BotonSocial(
+                        proveedor: ProveedorSocial.google,
+                        habilitado: !cargando,
+                      ),
                       const SizedBox(height: 16),
                       Wrap(
                         alignment: WrapAlignment.center,
@@ -308,6 +328,90 @@ class _Enlace extends StatelessWidget {
         texto,
         style: Theme.of(context).textTheme.labelMedium!
             .copyWith(color: t.verdeProfundo),
+      ),
+    );
+  }
+}
+
+/// «— o —» entre la contraseña y Google/Apple.
+class _Separador extends StatelessWidget {
+  const _Separador();
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return Row(
+      children: [
+        Expanded(child: Divider(color: t.linea)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text('o', style: Theme.of(context).textTheme.bodySmall),
+        ),
+        Expanded(child: Divider(color: t.linea)),
+      ],
+    );
+  }
+}
+
+/// «Continuar con Apple» (sólido, negro en claro y claro en oscuro, como pide Apple) y
+/// «Continuar con Google» (blanco con la «G» oficial y borde fino).
+class _BotonSocial extends ConsumerWidget {
+  const _BotonSocial({required this.proveedor, required this.habilitado});
+
+  final ProveedorSocial proveedor;
+  final bool habilitado;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.t;
+    final tt = Theme.of(context).textTheme;
+    final apple = proveedor == ProveedorSocial.apple;
+    final fondo = apple ? t.tinta : t.tarjeta;
+    final texto = apple ? t.tarjeta : t.tinta;
+    return SizedBox(
+      height: 50,
+      child: OutlinedButton(
+        onPressed: habilitado
+            ? () {
+                hapticoSeleccion();
+                unawaited(
+                  ref.read(accesoProvider.notifier).entrarCon(proveedor),
+                );
+              }
+            : null,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: fondo,
+          foregroundColor: texto,
+          disabledBackgroundColor: fondo.withValues(alpha: 0.5),
+          disabledForegroundColor: texto,
+          side: BorderSide(color: apple ? fondo : t.linea),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radio),
+          ),
+          textStyle: tt.labelLarge!.copyWith(fontSize: 15),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (apple)
+              Icon(Icons.apple, size: 22, color: texto)
+            else
+              Image.asset(
+                'assets/imagenes/google_g.png',
+                width: 18,
+                height: 18,
+                excludeFromSemantics: true,
+              ),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Text(
+                apple ? 'Continuar con Apple' : 'Continuar con Google',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

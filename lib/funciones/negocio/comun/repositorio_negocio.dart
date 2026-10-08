@@ -23,6 +23,10 @@ abstract class RepositorioNegocio {
   Future<Resultado<Novedades>> novedades({DateTime? desde});
 
   // API v2 (7-oct): lo ÚNICO que la app escribe — su teléfono para los avisos.
+  /// Tras entrar con Google o Apple (8-oct): si ese acceso no tiene cuenta, el
+  /// servidor lo borra y responde true (la app entonces cierra su sesión local).
+  Future<Resultado<bool>> accesoSinCuenta();
+
   Future<Resultado<void>> registrarDispositivo({
     required String token,
     required String plataforma,
@@ -90,6 +94,19 @@ class RepositorioNegocioApi implements RepositorioNegocio {
     Exito() => const Exito(null),
     Falla(:final error) => Falla(error),
   };
+
+  @override
+  Future<Resultado<bool>> accesoSinCuenta() async {
+    final r = await _api.escribir(
+      'POST',
+      '${Config.apiBaseV2}/acceso/sin-cuenta',
+      const {},
+    );
+    return switch (r) {
+      Exito(:final valor) => Exito(valor['borrado'] == true),
+      Falla(:final error) => Falla(error),
+    };
+  }
 
   @override
   Future<Resultado<void>> registrarDispositivo({

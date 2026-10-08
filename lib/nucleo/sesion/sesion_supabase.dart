@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:reclutaya_app/nucleo/config.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
+import 'package:reclutaya_app/nucleo/sesion/acceso_social_core.dart';
 import 'package:reclutaya_app/nucleo/sesion/arranque_core.dart';
 import 'package:reclutaya_app/nucleo/sesion/sesion.dart';
 import 'package:reclutaya_app/nucleo/util/resultado.dart';
@@ -188,6 +189,32 @@ class SesionSupabase extends Sesion {
     try {
       await _auth
           .signInWithPassword(email: correo.trim(), password: contrasena)
+          .timeout(const Duration(seconds: 15));
+      return const Exito(null);
+    } on AuthException catch (e) {
+      return Falla(errorDeAcceso(e.code ?? '', e.message));
+    } on TimeoutException {
+      return const Falla(SinRed());
+    } on Exception {
+      return const Falla(SinRed());
+    }
+  }
+
+  @override
+  Future<Resultado<void>> entrarConToken({
+    required ProveedorSocial proveedor,
+    required String idToken,
+    required String nonce,
+  }) async {
+    try {
+      await _auth
+          .signInWithIdToken(
+            provider: proveedor == ProveedorSocial.apple
+                ? OAuthProvider.apple
+                : OAuthProvider.google,
+            idToken: idToken,
+            nonce: nonce,
+          )
           .timeout(const Duration(seconds: 15));
       return const Exito(null);
     } on AuthException catch (e) {

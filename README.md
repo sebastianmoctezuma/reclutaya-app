@@ -153,3 +153,23 @@ fecha y cifras. Si el vidrio nativo de la barra rompe el presupuesto, `BarraPest
   Supabase.
 - Lado candidato, notificaciones, acciones (contactar, pedir material): v2.
 - Tiendas: certificado de distribución de Apple y llave de firma de Android (las cuentas ya existen).
+
+## Entrar con Google o Apple (8-oct-2026)
+
+La app es **solo para entrar**: Google y Apple son otra puerta a una cuenta que ya existe
+(Supabase la liga por correo). Hoja nativa → `signInWithIdToken` con nonce
+(`lib/nucleo/sesion/acceso_social.dart`; lo puro en `acceso_social_core.dart`).
+
+- Con negocio: entra como con contraseña (`ControladorAcceso._trasEntrar`, la misma ruta
+  para las tres puertas).
+- Sin cuenta: `POST /api/movil/v2/acceso/sin-cuenta` borra el acceso huérfano en el
+  servidor y la app suelta la sesión local por `soltarSesionHuerfanaProvider` (la otra
+  salida permitida por el guardián de salida única) y muestra el aviso. Con Apple, el
+  aviso explica «Compartir mi correo».
+- Mientras se decide, `accesoSocialEnCursoProvider` frena el registro del teléfono para
+  avisos: con un acceso sin cuenta respondería 401 («Tu sesión terminó»).
+- Cancelar la hoja nativa no cambia nada en pantalla (también en «Agregar cuenta»).
+- Configuración: `GOOGLE_IOS_CLIENT_ID` (por defecto el cliente iOS del proyecto
+  «Reclutaya»), su esquema al revés en `Info.plist` (`CFBundleURLTypes`) y el permiso
+  `com.apple.developer.applesignin` en `Runner.entitlements` (con «Sign In with Apple»
+  activado en el App ID). Apple solo aparece en iPhone.

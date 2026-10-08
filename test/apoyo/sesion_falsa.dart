@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
+import 'package:reclutaya_app/nucleo/sesion/acceso_social_core.dart';
 import 'package:reclutaya_app/nucleo/sesion/sesion.dart';
 import 'package:reclutaya_app/nucleo/util/resultado.dart';
 
@@ -94,6 +95,18 @@ class SesionFalsa extends Sesion {
       _cambios.add(true);
     }
     return entrarR;
+  }
+
+  /// Entrar con Google o Apple: misma respuesta que `entrarR`.
+  final entradasSociales = <ProveedorSocial>[];
+  @override
+  Future<Resultado<void>> entrarConToken({
+    required ProveedorSocial proveedor,
+    required String idToken,
+    required String nonce,
+  }) {
+    entradasSociales.add(proveedor);
+    return entrar('$proveedor@social', 'x');
   }
 
   @override

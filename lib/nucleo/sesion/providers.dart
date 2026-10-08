@@ -29,3 +29,18 @@ class AvisoAcceso extends Notifier<String?> {
 final avisoAccesoProvider = NotifierProvider<AvisoAcceso, String?>(
   AvisoAcceso.new,
 );
+
+/// Entrar con Google o Apple está en curso (8-oct): la sesión ya se abrió pero aún no
+/// se sabe si hay negocio. Mientras, nadie registra el teléfono para avisos (con un
+/// acceso sin cuenta respondería 401 y la app diría «Tu sesión terminó»).
+class AccesoSocialEnCurso extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  bool get valor => state;
+  set valor(bool v) => state = v;
+}
+
+final accesoSocialEnCursoProvider = NotifierProvider<AccesoSocialEnCurso, bool>(
+  AccesoSocialEnCurso.new,
+);

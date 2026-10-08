@@ -169,6 +169,9 @@ final avisosSesionProvider = Provider<void>((ref) {
   ref.listen(autenticadoProvider, (antes, ahora) {
     final avisosCtl = ref.read(controladorAvisosProvider.notifier);
     if (ahora.value == true && antes?.value != true) {
+      // Con Google o Apple, el controlador de acceso lo registra cuando confirma que
+      // hay negocio (8-oct).
+      if (ref.read(accesoSocialEnCursoProvider)) return;
       unawaited(avisosCtl.alEntrar());
     } else if (ahora.value == false && antes?.value == true) {
       unawaited(avisosCtl.alPerderSesion());
@@ -213,6 +216,15 @@ final avisosSesionProvider = Provider<void>((ref) {
 /// sesión aún válida y con tiempo límite), luego borra el token en el teléfono y al
 /// final cierra la sesión. Nadie llama `sesion.salir()` directo: lo vigila
 /// `test/nucleo/sesion/salida_unica_test.dart`.
+/// La OTRA salida, solo para el acceso de Google o Apple que resultó SIN cuenta (8-oct):
+/// su usuario ya se borró en el servidor y nunca registró el teléfono (el registro espera
+/// a confirmar negocio), así que no hay nada que dar de baja — intentarlo respondería 401
+/// y la app diría «Tu sesión terminó». Solo se tira la sesión del teléfono.
+final soltarSesionHuerfanaProvider = Provider<Future<void> Function()>(
+  (ref) =>
+      () => ref.read(sesionProvider).salir(),
+);
+
 final cerrarSesionProvider = Provider<Future<void> Function()>(
   (ref) => () async {
     // Con otra cuenta guardada, «salir» es quitar esta y pasar a la otra (8-oct).

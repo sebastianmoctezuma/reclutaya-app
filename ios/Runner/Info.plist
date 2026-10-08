@@ -73,5 +73,20 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<!-- Continuar con Google (8-oct): Google regresa a la app por este esquema (el ID de
+	     cliente de iOS al revés). Público. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.517846735413-2bl9rsj3figkr476mjo22q9kc9gav2bh</string>
+			</array>
+		</dict>
+	</array>
+	<key>GIDClientID</key>
+	<string>517846735413-2bl9rsj3figkr476mjo22q9kc9gav2bh.apps.googleusercontent.com</string>
 </dict>
 </plist>

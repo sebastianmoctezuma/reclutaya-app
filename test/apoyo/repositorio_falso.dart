@@ -55,6 +55,10 @@ class RepositorioFalso implements RepositorioNegocio {
   final registros = <(String, String, bool)>[];
   final cambios = <(String, bool)>[];
   final bajas = <String>[];
+
+  /// Tras Google o Apple: true = el servidor dijo que ese acceso no tiene cuenta.
+  Resultado<bool> sinCuentaR = const Exito(false);
+  int llamadasSinCuenta = 0;
   int llamadasCandidato = 0;
   int llamadasVacante = 0;
   int llamadasRanking = 0;
@@ -65,6 +69,12 @@ class RepositorioFalso implements RepositorioNegocio {
   Future<T> _r<T>(T v) async {
     if (demora > Duration.zero) await Future<void>.delayed(demora);
     return v;
+  }
+
+  @override
+  Future<Resultado<bool>> accesoSinCuenta() {
+    llamadasSinCuenta++;
+    return _r(sinCuentaR);
   }
 
   @override

@@ -34,6 +34,13 @@ abstract final class Config {
     'FIREBASE_APP_ID_ANDROID',
   );
 
+  /// El cliente OAuth de iOS para «Continuar con Google» (8-oct). PÚBLICO: va dentro
+  /// de la app; Supabase lo tiene en su lista de clientes autorizados.
+  static const String googleIosClientId = String.fromEnvironment(
+    'GOOGLE_IOS_CLIENT_ID',
+    defaultValue: '517846735413-2bl9rsj3figkr476mjo22q9kc9gav2bh.apps.googleusercontent.com',
+  );
+
   /// La API v2 vive junto a la v1 (solo el registro del teléfono).
   static String get apiBaseV2 => apiBase.replaceFirst(RegExp(r'/v1$'), '/v2');
 
