@@ -64,10 +64,29 @@ Sube `build/ios/ipa/*.ipa` con Transporter (o abre `build/ios/archive/Runner.xca
 Xcode → Distribute App). `<N>` debe subir en cada envío. Versión visible: `version` en
 `pubspec.yaml`.
 
-**Estado (8-oct-2026):** la compilación **1.0.0 (4)** está en TestFlight, procesada por
-Apple, con el grupo interno «Reclutaya app» (5 testers: Antonio con sus dos correos, Job,
-Sergio y Sebastián). Se instaló en un iPhone real con el ícono nuevo y el primer teléfono
-ya quedó registrado para avisos. La siguiente entrega debe usar `--build-number=5` o más.
+**Estado (8-oct-2026):** la compilación **1.0.0 (5)** está en TestFlight con el grupo
+interno «Reclutaya app» (5 testers: Antonio con sus dos correos, Job, Sergio y
+Sebastián). La siguiente entrega va con `--build-number=6` o más (Apple rechaza uno
+repetido). Lo que trae la 5, además de varias cuentas y avisos:
+
+- **Tarjetas sólidas** con la superelipse de iOS (`RoundedSuperellipseBorder`; la
+  `ContinuousRectangleBorder` abombaba los lados) y sin desenfoque por tarjeta.
+- **Botón redondo blanco** (`BotonRedondo`) para la campana y la cruz de cerrar.
+- **Actividad** con la transición de zoom de iOS 18 (`paginaZoom`): nace de la campana y
+  vuelve a ella. Se abre con `go`, no `push` (con `push` se apilaba otro Inicio).
+- **Dock** que se encoge al 82 % al bajar (escala, no cambio de tamaño: la barra nativa
+  es una vista de iOS incrustada) y se decide en cada movimiento, no solo al cambiar de
+  dirección. Con VoiceOver no se compacta.
+- **«Revisar candidatos»** como botón teñido con chevron; el **logo del negocio** en la
+  pestaña Cuenta; el **logo real** de la web (`logo_claro.png` / `logo_oscuro.png`) en el
+  login y abajo en Cuenta (`MarcaReclutaYa`).
+- **Sucursal del Inicio** abre Sucursales con su hoja abierta (`/vacantes?sucursal=`);
+  filtro de sucursal en hoja sólida; los miembros con un solo estilo en todas.
+- **Carga:** `/yo` una sola vez al abrir con el Inicio y la campana en paralelo
+  (`yoAlArrancar`); vacante, ranking y candidato se quedan 5 min en memoria
+  (`conservarFichaProvider`) y se actualizan solos al volver (`RevalidarAlEntrar`); el
+  ranking sale junto con la ficha. En desarrollo, cada petición deja en el log su ruta y
+  su tiempo (nunca el token ni los datos).
 
 **Ícono:** sale de `assets/imagenes/icono_1024.png` (iOS, sin transparencia: iOS pone sus
 propias esquinas) e `icono_frontal.png` (primer plano del ícono adaptable de Android) con
