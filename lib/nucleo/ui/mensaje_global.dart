@@ -7,8 +7,12 @@ final mensajeriaProvider = Provider<GlobalKey<ScaffoldMessengerState>>(
   (_) => GlobalKey<ScaffoldMessengerState>(),
 );
 
-void mostrarMensaje(Ref ref, String texto) {
-  ref.read(mensajeriaProvider).currentState
+void mostrarMensaje(Ref ref, String texto) =>
+    mostrarMensajeEn(ref.read(mensajeriaProvider), texto);
+
+/// Lo mismo con la llave del mensajero en la mano (desde un widget, con `WidgetRef`).
+void mostrarMensajeEn(GlobalKey<ScaffoldMessengerState> llave, String texto) {
+  llave.currentState
     ?..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(content: Text(texto), behavior: SnackBarBehavior.floating),

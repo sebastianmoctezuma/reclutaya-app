@@ -86,7 +86,9 @@ class TarjetaSucursal extends StatelessWidget {
             '${plural(s.miembros.length, 'miembro', 'miembros')}',
             style: tt.bodySmall,
           ),
-          if (s.sinRanking > 0) ...[
+          // «Sin ranking» se fue (13-oct): el ranking se hace solo al entrar. Lo que sí
+          // sirve ver de un vistazo: cuántos llegaron esta semana.
+          if (s.nuevosSemana > 0) ...[
             const SizedBox(height: 4),
             Row(
               children: [
@@ -94,18 +96,23 @@ class TarjetaSucursal extends StatelessWidget {
                   width: 7,
                   height: 7,
                   decoration: BoxDecoration(
-                    color: t.naranja,
+                    color: t.azul,
                     shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  plural(
-                    s.sinRanking,
-                    'candidato sin ranking',
-                    'candidatos sin ranking',
+                // Flexible: la tarjeta es angosta y el texto, largo; sin esto desborda.
+                Expanded(
+                  child: Text(
+                    plural(
+                      s.nuevosSemana,
+                      'candidato nuevo esta semana',
+                      'candidatos nuevos esta semana',
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tt.labelMedium!.copyWith(color: t.tintaSuave),
                   ),
-                  style: tt.labelMedium!.copyWith(color: t.naranjaProfundo),
                 ),
               ],
             ),
@@ -311,11 +318,7 @@ class _HojaSucursal extends StatelessWidget {
               children: [
                 _Numero(numero(s.activas), 'Activas', null),
                 VerticalDivider(width: 1, color: t.linea),
-                _Numero(
-                  numero(s.sinRanking),
-                  'Sin ranking',
-                  s.sinRanking > 0 ? t.naranjaProfundo : null,
-                ),
+                _Numero(numero(s.nuevosSemana), 'Nuevos esta semana', null),
                 VerticalDivider(width: 1, color: t.linea),
                 _Numero(numero(s.contactosUsados), 'Contactos usados', null),
               ],
@@ -420,12 +423,12 @@ class _VacanteDeSucursal extends StatelessWidget {
                           plural(v.candidatos, 'candidato', 'candidatos'),
                           style: tt.bodySmall,
                         ),
-                        if (v.sinRankear > 0) ...[
+                        if (v.nuevosSemana > 0) ...[
                           Text('·', style: tt.bodySmall),
                           Text(
-                            '${v.sinRankear} sin ranking',
+                            '${v.nuevosSemana} nuevo${v.nuevosSemana == 1 ? '' : 's'} esta semana',
                             style: tt.labelMedium!.copyWith(
-                              color: t.naranjaProfundo,
+                              color: t.tintaSuave,
                             ),
                           ),
                         ],

@@ -58,6 +58,15 @@ void main() {
     expect(s.salidas, 1);
   });
 
+  testWidgets(
+    'la app no crea cuentas: no hay «Crear cuenta» (App Review 3.1.1)',
+    (tester) async {
+      await tester.pumpWidget(_app(SesionFalsa(), RepositorioFalso()));
+      expect(find.text('Crear cuenta'), findsNothing);
+      expect(find.text('¿Olvidaste tu contraseña?'), findsOneWidget);
+    },
+  );
+
   testWidgets('el botón está deshabilitado hasta que hay correo y contraseña', (
     tester,
   ) async {

@@ -60,7 +60,7 @@ class PantallaVacante extends ConsumerWidget {
     if ((resumen?.candidatos ?? 0) > 0) {
       ref.listen(rankingProvider(slug), (_, _) {});
     }
-    final v = ficha.value;
+    final v = ficha.vigente;
     return RevalidarAlEntrar(
       alEntrar: (ref) {
         if (ref.exists(vacanteProvider(slug)) &&
@@ -396,8 +396,8 @@ class _Proceso extends StatelessWidget {
     final celdas = <(String, int, Color?)>[
       ('Postulados', c.total, null),
       if (c.pideRequisitos) ('Cumplen requisitos', c.cumplenRequisitos, null),
+      // «Sin rankear» se fue (13-oct): el ranking se hace solo al entrar.
       ('En el ranking', c.rankeados, t.verdeProfundo),
-      if (c.sinRankear > 0) ('Sin rankear', c.sinRankear, t.naranjaProfundo),
     ];
     final tt = Theme.of(context).textTheme;
     return Tarjeta(

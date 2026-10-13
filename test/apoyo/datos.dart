@@ -50,6 +50,7 @@ const vacanteActiva = VacanteResumen(
   sucursal: SucursalRef(id: 's1', nombre: 'Centro', colorIdx: 2),
   candidatos: 14,
   sinRankear: 3,
+  nuevosSemana: 3,
   diasRestantes: 40,
 );
 
@@ -242,10 +243,10 @@ const inicioCompleto = Inicio(
   consumo: ConsumoInicio(),
   pendientes: [
     PendienteInicio(
-      id: 'rank-1',
-      tipo: 'ranking',
+      id: 'vence-1',
+      tipo: 'vence',
       titulo: 'Supervisor/a · Yaqui Parrilla Sonorense',
-      sub: '1 candidato sin ranking',
+      sub: 'Vence en 3 días · finalízala o deja que cierre sola.',
       slug: 'supervisor',
     ),
     PendienteInicio(
@@ -325,7 +326,7 @@ const sucursalesMulti = Sucursales(
       vacantesActivas: 1,
       direccion: 'Paseo Colinas del Pedregal 134, Reynosa',
       activas: 1,
-      sinRanking: 2,
+      nuevosSemana: 2,
       contactosUsados: 4,
       vacantes: [
         VacanteDeSucursal(
@@ -333,7 +334,7 @@ const sucursalesMulti = Sucursales(
           puesto: 'Mesero',
           estado: 'ACTIVA',
           candidatos: 4,
-          sinRankear: 2,
+          nuevosSemana: 2,
         ),
       ],
     ),

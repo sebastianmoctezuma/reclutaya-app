@@ -7,6 +7,8 @@ import 'package:reclutaya_app/nucleo/sesion/providers.dart';
 import '../../../apoyo/repositorio_falso.dart';
 import '../../../apoyo/sesion_falsa.dart';
 
+final _refProvider = Provider<Ref>((ref) => ref);
+
 void main() {
   test('al cerrar sesión se olvida todo: la siguiente cuenta no ve datos de la anterior', () async {
     final repo = RepositorioFalso();
@@ -65,6 +67,49 @@ void main() {
       repo.llamadasYo,
       antes + 1,
       reason: 'la cuenta nueva pide su propio /yo',
+    );
+  });
+
+  test('al cambiar de cuenta, mientras llegan los datos nuevos NO se ven los de la anterior', () async {
+    // Riverpod conserva el valor anterior al refrescar (bien para «jalar para
+    // actualizar»), pero al cambiar de cuenta eso pintaba un instante el negocio de
+    // la otra cuenta. Al limpiar, cada dato pasa a «cargando» sin valor vigente.
+    final repo = RepositorioFalso();
+    final c = ProviderContainer(
+      overrides: [
+        repositorioProvider.overrideWithValue(repo),
+        sesionProvider.overrideWithValue(SesionFalsa()),
+        almacenLocalProvider.overrideWithValue(AlmacenMemoria()),
+      ],
+      retry: sinReintentos,
+    );
+    addTearDown(c.dispose);
+    final subs = [
+      c.listen(yoProvider, (_, _) {}),
+      c.listen(inicioProvider, (_, _) {}),
+      c.listen(sucursalesProvider, (_, _) {}),
+      c.listen(novedadesProvider, (_, _) {}),
+    ];
+    addTearDown(() {
+      for (final s in subs) {
+        s.close();
+      }
+    });
+    await c.read(yoProvider.future);
+    await c.read(inicioProvider.future);
+    await c.read(sucursalesProvider.future);
+    await c.read(novedadesProvider.future);
+    limpiarDatosDeCuenta(c.read(_refProvider));
+    expect(c.read(yoProvider).vigente, isNull);
+    expect(c.read(inicioProvider).vigente, isNull);
+    expect(c.read(sucursalesProvider).vigente, isNull);
+    expect(c.read(novedadesProvider).vigente, isNull);
+    expect(c.read(yoProvider).isLoading, isTrue);
+    await c.read(yoProvider.future);
+    expect(
+      c.read(yoProvider).vigente,
+      isNotNull,
+      reason: 'llega la cuenta nueva',
     );
   });
 

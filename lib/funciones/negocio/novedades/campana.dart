@@ -39,7 +39,7 @@ class CampanaNovedades extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.t;
-    final novedades = ref.watch(novedadesProvider).value;
+    final novedades = ref.watch(novedadesProvider).vigente;
     final visto = ref.watch(vistoHastaProvider);
     final cuantas = novedades == null || visto.isLoading
         ? 0

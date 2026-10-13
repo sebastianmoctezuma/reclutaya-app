@@ -60,7 +60,7 @@ class _PantallaCascaronState extends ConsumerState<PantallaCascaron> {
   Widget build(BuildContext context) {
     final shell = widget.shell;
     final ios = Plataforma.esIOS;
-    final yo = ref.watch(yoProvider).value;
+    final yo = ref.watch(yoProvider).vigente;
     final multi = yo?.variasSucursales ?? false;
     final empresa = yo?.empresa;
     final items = [

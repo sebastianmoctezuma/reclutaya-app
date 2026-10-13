@@ -25,9 +25,17 @@ const _lados = EdgeInsets.symmetric(horizontal: 16);
 /// llega parcial (nombre corto, sin teléfono ni archivos) y así se pinta. Las
 /// URLs firmadas vencen: si una falla, se pide la ficha otra vez, una sola vez.
 class PantallaCandidato extends ConsumerStatefulWidget {
-  const PantallaCandidato({required this.postulacionId, super.key});
+  const PantallaCandidato({
+    required this.postulacionId,
+    this.seccion,
+    super.key,
+  });
 
   final String postulacionId;
+
+  /// A qué parte abrir desplazada (13-oct): «video», «documento» o «test», cuando se
+  /// llega desde un aviso. null = arriba del todo.
+  final String? seccion;
 
   @override
   ConsumerState<PantallaCandidato> createState() => _PantallaCandidatoState();
@@ -35,6 +43,34 @@ class PantallaCandidato extends ConsumerStatefulWidget {
 
 class _PantallaCandidatoState extends ConsumerState<PantallaCandidato> {
   final _control = ControladorFicha();
+
+  // Las secciones a las que un aviso puede llevar directo. Se desplaza UNA vez, en
+  // cuanto hay datos; si la persona ya se movió, no se le vuelve a jalar.
+  final _llaves = <String, GlobalKey>{
+    'video': GlobalKey(),
+    'documento': GlobalKey(),
+    'test': GlobalKey(),
+  };
+  bool _desplazado = false;
+
+  @override
+  void didUpdateWidget(covariant PantallaCandidato viejo) {
+    super.didUpdateWidget(viejo);
+    // Otro aviso del MISMO candidato con otra sección: go_router conserva esta
+    // pantalla y solo cambia la query, así que el desplazamiento se vuelve a permitir.
+    if (viejo.seccion != widget.seccion) _desplazado = false;
+  }
+
+  void _irASeccion() {
+    final ctx = _llaves[widget.seccion]?.currentContext;
+    if (ctx == null || !mounted) return;
+    Scrollable.ensureVisible(
+      ctx,
+      alignment: 0.06,
+      duration: const Duration(milliseconds: 380),
+      curve: Curves.easeOutCubic,
+    );
+  }
 
   void _urlFallo() {
     if (_control.puedeReintentarUrl()) {
@@ -56,6 +92,10 @@ class _PantallaCandidatoState extends ConsumerState<PantallaCandidato> {
   Widget build(BuildContext context) {
     final id = widget.postulacionId;
     final ficha = ref.watch(candidatoProvider(id));
+    if (widget.seccion != null && !_desplazado && ficha.hasValue) {
+      _desplazado = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _irASeccion());
+    }
     return RevalidarAlEntrar(
       alEntrar: (ref) {
         if (ref.exists(candidatoProvider(id)) &&
@@ -80,9 +120,18 @@ class _PantallaCandidatoState extends ConsumerState<PantallaCandidato> {
           ...ficha.when(
             skipError: ficha.hasValue,
             data: (f) => [
+              // Una sola caja, no un SliverList: el sliver construye perezosamente y
+              // la sección del test, abajo del todo, no existiría aún cuando el aviso
+              // quiere desplazarse a ella (su llave no tendría contexto). La ficha es
+              // corta; la pereza no aporta nada.
               SliverPadding(
                 padding: _lados,
-                sliver: SliverList.list(children: _cuerpo(context, f)),
+                sliver: SliverToBoxAdapter(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: _cuerpo(context, f),
+                  ),
+                ),
               ),
             ],
             loading: () => const [
@@ -282,6 +331,7 @@ class _PantallaCandidatoState extends ConsumerState<PantallaCandidato> {
       _Grupo(renglones: datos),
       const SizedBox(height: 12),
       _Seccion(
+        key: _llaves['video'],
         titulo: 'Video',
         tesela: Tesela(icono: Icons.videocam_rounded, color: t.azul),
         estado: estadoDe(f.video),
@@ -290,6 +340,7 @@ class _PantallaCandidatoState extends ConsumerState<PantallaCandidato> {
       ),
       const SizedBox(height: 12),
       _Seccion(
+        key: _llaves['documento'],
         titulo: 'Documento',
         tesela: Tesela(
           icono: Icons.description_rounded,
@@ -320,6 +371,7 @@ class _PantallaCandidatoState extends ConsumerState<PantallaCandidato> {
       ),
       const SizedBox(height: 12),
       _Seccion(
+        key: _llaves['test'],
         titulo: 'Test de compatibilidad',
         tesela: Tesela(icono: Icons.donut_large_rounded, color: t.naranja),
         estado: estadoTest,
@@ -369,6 +421,7 @@ class _Seccion extends StatelessWidget {
     required this.hijo,
     this.estado,
     this.recibido = false,
+    super.key,
   });
 
   final String titulo;

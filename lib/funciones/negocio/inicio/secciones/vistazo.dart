@@ -38,7 +38,7 @@ class Vistazo extends StatelessWidget {
         _Dato(
           tesela: Tesela(icono: Icons.person_add_alt_1_outlined, color: t.azul),
           valor: numero(r.candidatosNuevos),
-          etiqueta: 'Candidatos nuevos',
+          etiqueta: 'Candidatos nuevos esta semana',
         ),
       if (contactos != null)
         _Dato(

@@ -44,6 +44,40 @@ void main() {
   });
 
   testWidgets(
+    'abierta desde un aviso de test, la ficha llega desplazada a esa sección',
+    (tester) async {
+      comoTelefono(tester);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            repositorioProvider.overrideWithValue(RepositorioFalso()),
+          ],
+          retry: sinReintentos,
+          child: MaterialApp(
+            theme: temaClaro(),
+            home: const PantallaCandidato(postulacionId: 'p2', seccion: 'test'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // Sin desplazar nada, la sección queda dentro de la pantalla. Con el cuerpo
+      // en un sliver perezoso no existía aún y el aviso dejaba la ficha arriba.
+      final seccion = find.text('Test de compatibilidad');
+      expect(seccion, findsOneWidget);
+      final alto =
+          tester.view.physicalSize.height / tester.view.devicePixelRatio;
+      final y = tester.getTopLeft(seccion).dy;
+      expect(y, greaterThanOrEqualTo(0));
+      expect(
+        y,
+        lessThan(alto * 0.5),
+        reason: 'quedó arriba, no abajo del todo',
+      );
+      expect(find.text('Luis Pérez Ruiz'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'contactada: el nombre una sola vez, la fase, las razones y los datos',
     (tester) async {
       comoTelefono(tester);

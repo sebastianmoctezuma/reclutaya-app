@@ -34,3 +34,9 @@ String mensajeSinCuenta(ProveedorSocial p) => switch (p) {
         'ocultaste: Ajustes › tu nombre › Iniciar sesión con Apple › ReclutaYa › '
         'Dejar de usar, y vuelve a intentar.',
 };
+
+/// Cuando la hoja de Google o de Apple falla por algo que no es cancelar.
+String mensajeFallaProveedor(ProveedorSocial p) => switch (p) {
+  ProveedorSocial.google => 'No se pudo entrar con Google. Intenta de nuevo.',
+  ProveedorSocial.apple => 'No se pudo entrar con Apple. Intenta de nuevo.',
+};

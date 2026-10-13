@@ -172,17 +172,25 @@ final candidatoProvider = FutureProvider.autoDispose
 /// Olvida en memoria todo lo leído de una cuenta: al salir, al entrar con otra y al
 /// cambiar de cuenta (varias cuentas, 8-oct). Nada de una cuenta se ve en la otra.
 void limpiarDatosDeCuenta(Ref ref) {
+  // `asReload`: al cambiar de cuenta cada dato vuelve a «cargando» y deja de valer
+  // el de la anterior (`vigente` = null). Un refresco normal sí lo conserva.
   ref
-    ..invalidate(yoProvider)
-    ..invalidate(inicioProvider)
-    ..invalidate(vacantesActivasProvider)
-    ..invalidate(vacantesCerradasProvider)
-    ..invalidate(sucursalesProvider)
-    ..invalidate(novedadesProvider)
+    ..invalidate(yoProvider, asReload: true)
+    ..invalidate(inicioProvider, asReload: true)
+    ..invalidate(vacantesActivasProvider, asReload: true)
+    ..invalidate(vacantesCerradasProvider, asReload: true)
+    ..invalidate(sucursalesProvider, asReload: true)
+    ..invalidate(novedadesProvider, asReload: true)
     ..invalidate(filtroSucursalProvider)
-    ..invalidate(vacanteProvider)
-    ..invalidate(rankingProvider)
-    ..invalidate(candidatoProvider);
+    ..invalidate(vacanteProvider, asReload: true)
+    ..invalidate(rankingProvider, asReload: true)
+    ..invalidate(candidatoProvider, asReload: true);
+}
+
+extension DatoVigente<T> on AsyncValue<T> {
+  /// El valor, salvo mientras se recarga por un cambio de cuenta: ahí el anterior
+  /// es de OTRA cuenta y no se pinta. (Al refrescar, en cambio, sí se conserva.)
+  T? get vigente => isReloading ? null : value;
 }
 
 final limpiezaSesionProvider = Provider<void>((ref) {

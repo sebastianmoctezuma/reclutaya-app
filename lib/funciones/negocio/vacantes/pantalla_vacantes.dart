@@ -72,9 +72,9 @@ class _PantallaVacantesState extends ConsumerState<PantallaVacantes> {
 
   @override
   Widget build(BuildContext context) {
-    final multi = ref.watch(yoProvider).value?.variasSucursales ?? false;
+    final multi = ref.watch(yoProvider).vigente?.variasSucursales ?? false;
     if (widget.abrirSucursal != null) {
-      final datos = ref.watch(sucursalesProvider).value;
+      final datos = ref.watch(sucursalesProvider).vigente;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _abrirSiToca(datos);
       });

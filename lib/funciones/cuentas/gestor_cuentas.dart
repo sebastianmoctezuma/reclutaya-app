@@ -25,6 +25,8 @@ class _TokenFijo implements ProveedorToken {
   @override
   final String token;
   @override
+  Future<String?> tokenVigente() async => token;
+  @override
   Future<String?> renovar() async => null;
   @override
   Future<void> sesionVencida() async {}

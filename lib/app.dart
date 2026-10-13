@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reclutaya_app/funciones/cuentas/gestor_cuentas.dart';
+import 'package:reclutaya_app/funciones/negocio/comun/al_volver.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
 import 'package:reclutaya_app/funciones/negocio/novedades/controlador_avisos.dart';
 import 'package:reclutaya_app/nucleo/rutas/rutas.dart';
@@ -18,7 +19,9 @@ class App extends ConsumerWidget {
     ref
       ..watch(limpiezaSesionProvider)
       ..watch(avisosSesionProvider)
-      ..watch(cuentasSesionProvider);
+      ..watch(cuentasSesionProvider)
+      // Al volver del fondo: conexiones nuevas y datos al día (12-oct).
+      ..watch(alVolverProvider);
     return MaterialApp.router(
       scaffoldMessengerKey: ref.watch(mensajeriaProvider),
       title: 'ReclutaYa',

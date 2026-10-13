@@ -10,6 +10,7 @@ import 'package:reclutaya_app/funciones/cascaron/pantalla_cascaron.dart';
 import 'package:reclutaya_app/funciones/cuenta/pantalla_cuenta.dart';
 import 'package:reclutaya_app/funciones/negocio/candidato/pantalla_candidato.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/pantalla_inicio.dart';
+import 'package:reclutaya_app/funciones/negocio/novedades/avisos_core.dart';
 import 'package:reclutaya_app/funciones/negocio/novedades/pantalla_actividad.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/pantalla_vacante.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/pantalla_vacantes.dart';
@@ -101,6 +102,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                             path: ':id',
                             builder: (_, s) => PantallaCandidato(
                               postulacionId: s.pathParameters['id']!,
+                              // Desde un aviso (13-oct): la ficha abre en esa sección.
+                              seccion: seccionValida(
+                                s.uri.queryParameters['seccion'],
+                              ),
                             ),
                           ),
                         ],

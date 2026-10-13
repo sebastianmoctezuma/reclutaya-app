@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:reclutaya_app/nucleo/config.dart';
@@ -54,8 +55,9 @@ class AccesoSocialNativo implements AccesoSocial {
         nonce: crudo,
       );
     } on GoogleSignInException catch (e) {
+      debugPrint('Google: ${e.code} ${e.description} ${e.details}');
       if (e.code == GoogleSignInExceptionCode.canceled) return null;
-      throw const Servidor('No se pudo entrar con Google. Intenta de nuevo.');
+      throw Servidor(mensajeFallaProveedor(ProveedorSocial.google));
     }
   }
 
@@ -77,7 +79,8 @@ class AccesoSocialNativo implements AccesoSocial {
       );
     } on SignInWithAppleAuthorizationException catch (e) {
       if (e.code == AuthorizationErrorCode.canceled) return null;
-      throw const Servidor('No se pudo entrar con Apple. Intenta de nuevo.');
+      debugPrint('Apple: ${e.code} ${e.message}');
+      throw Servidor(mensajeFallaProveedor(ProveedorSocial.apple));
     }
   }
 }

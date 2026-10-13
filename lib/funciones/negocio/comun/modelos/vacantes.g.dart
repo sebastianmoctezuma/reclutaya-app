@@ -20,6 +20,7 @@ VacanteResumen _$VacanteResumenFromJson(Map<String, dynamic> json) =>
       slug: json['slug'] as String,
       candidatos: (json['candidatos'] as num).toInt(),
       sinRankear: (json['sinRankear'] as num).toInt(),
+      nuevosSemana: (json['nuevosSemana'] as num?)?.toInt() ?? 0,
       ubicacion: json['ubicacion'] as String?,
       sueldoTexto: json['sueldoTexto'] as String?,
       sucursal: json['sucursal'] == null

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reclutaya_app/funciones/cuentas/gestor_cuentas.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
@@ -45,6 +46,12 @@ class ControladorAcceso extends AsyncNotifier<void> {
       c = await ref.read(accesoSocialProvider).obtener(proveedor);
     } on ErrorApi catch (e) {
       state = AsyncError(e, StackTrace.current);
+      return;
+    } on Object catch (e, st) {
+      // Lo que lance el plugin nativo (PlatformException, configuración): nunca se
+      // escapa sin avisar — antes el primer intento fallido no mostraba nada.
+      debugPrint('acceso social ($proveedor): $e');
+      state = AsyncError(Servidor(mensajeFallaProveedor(proveedor)), st);
       return;
     }
     if (c == null) return; // Canceló: no es un error.

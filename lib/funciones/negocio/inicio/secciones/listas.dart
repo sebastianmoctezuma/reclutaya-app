@@ -51,10 +51,9 @@ class _MiniSucursal extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.t;
     final tt = Theme.of(context).textTheme;
-    final semana = [
-      '${plural(s.candidatosSemana, 'candidato', 'candidatos')} esta semana',
-      if (s.sinRanking > 0) '${s.sinRanking} sin ranking',
-    ].join(' · ');
+    // «Sin ranking» se fue (13-oct): el ranking se hace solo al entrar.
+    final semana =
+        '${plural(s.candidatosSemana, 'candidato', 'candidatos')} esta semana';
     return SuperficieSucursal(
       colorIdx: s.colorIdx,
       padding: const EdgeInsets.all(14),
@@ -113,9 +112,7 @@ class _MiniSucursal extends StatelessWidget {
             semana,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: tt.labelMedium!.copyWith(
-              color: s.sinRanking > 0 ? t.naranjaProfundo : t.tintaSuave,
-            ),
+            style: tt.labelMedium!.copyWith(color: t.tintaSuave),
           ),
         ],
       ),

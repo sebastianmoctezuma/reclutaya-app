@@ -7,6 +7,10 @@ import 'package:reclutaya_app/nucleo/util/resultado.dart';
 abstract class Sesion implements ProveedorToken {
   bool get autenticado;
 
+  /// Por defecto, el token tal cual; la sesión real lo renueva si está por vencer.
+  @override
+  Future<String?> tokenVigente() async => token;
+
   /// true cuando hay sesión, false cuando no; sin repetidos.
   Stream<bool> get cambios;
 

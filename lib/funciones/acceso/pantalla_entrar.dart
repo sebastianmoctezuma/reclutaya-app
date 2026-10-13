@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reclutaya_app/funciones/acceso/controlador_acceso.dart';
@@ -17,7 +18,6 @@ import 'package:reclutaya_app/nucleo/ui/tarjeta.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 const _urlRecuperar = 'https://app.reclutaya.com/recuperar';
-const _urlCrear = 'https://reclutaya.com/crear-cuenta';
 
 /// Correo y contraseña sobre papel, en la tarjeta de la casa. Recuperar la
 /// contraseña y crear cuenta viven en la web: la app no los reimplementa.
@@ -84,157 +84,160 @@ class _PantallaEntrarState extends ConsumerState<PantallaEntrar> {
       _ => 'No se pudo entrar. Intenta de nuevo.',
     };
 
-    return Scaffold(
-      backgroundColor: t.papel,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Tarjeta(
-                padding: const EdgeInsets.fromLTRB(24, 30, 24, 24),
-                child: AutofillGroup(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (agregando)
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton(
-                            key: const Key('cancelarAgregar'),
-                            onPressed: cargando
-                                ? null
-                                : () async {
-                                    final router = GoRouter.of(context);
-                                    await ref
-                                        .read(gestorCuentasProvider.notifier)
-                                        .cancelarAgregar(sesionNueva: false);
-                                    if (router.canPop()) {
-                                      router.pop();
-                                    } else {
-                                      router.go('/inicio');
-                                    }
-                                  },
-                            child: const Text('Cancelar'),
+    // La hora y la batería, legibles sobre el papel: si se llega desde el Inicio
+    // verde (al cerrar sesión), la barra se quedaba con letras blancas.
+    final oscuro = Theme.of(context).brightness == Brightness.dark;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: oscuro ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: t.papel,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Tarjeta(
+                  padding: const EdgeInsets.fromLTRB(24, 30, 24, 24),
+                  child: AutofillGroup(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (agregando)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                              key: const Key('cancelarAgregar'),
+                              onPressed: cargando
+                                  ? null
+                                  : () async {
+                                      final router = GoRouter.of(context);
+                                      await ref
+                                          .read(gestorCuentasProvider.notifier)
+                                          .cancelarAgregar(sesionNueva: false);
+                                      if (router.canPop()) {
+                                        router.pop();
+                                      } else {
+                                        router.go('/inicio');
+                                      }
+                                    },
+                              child: const Text('Cancelar'),
+                            ),
                           ),
-                        ),
-                      const MarcaReclutaYa(),
-                      const SizedBox(height: 22),
-                      Text(
-                        agregando ? 'Agregar cuenta' : 'Bienvenido de vuelta',
-                        style: tt.headlineSmall,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        agregando
-                            ? 'Entra con el correo y la contraseña de la otra cuenta.'
-                            : 'Entra con tu correo y contraseña.',
-                        style: tt.bodySmall,
-                      ),
-                      const SizedBox(height: 22),
-                      _Campo(
-                        llave: const Key('correo'),
-                        controlador: _correo,
-                        etiqueta: 'Correo',
-                        teclado: TextInputType.emailAddress,
-                        autofill: const [AutofillHints.username],
-                        accion: TextInputAction.next,
-                        autofocus: true,
-                      ),
-                      const SizedBox(height: 12),
-                      _Campo(
-                        llave: const Key('contrasena'),
-                        controlador: _contrasena,
-                        etiqueta: 'Contraseña',
-                        oculto: !_ver,
-                        autofill: const [AutofillHints.password],
-                        accion: TextInputAction.done,
-                        alEnviar: _listo && !cargando ? _entrar : null,
-                        sufijo: IconButton(
-                          onPressed: () => setState(() => _ver = !_ver),
-                          icon: Icon(
-                            _ver
-                                ? CupertinoIcons.eye_slash
-                                : CupertinoIcons.eye,
-                            size: 20,
-                            color: t.tintaTenue,
-                          ),
-                          tooltip: _ver ? 'Ocultar' : 'Ver',
-                        ),
-                      ),
-                      if (mensaje != null) ...[
-                        const SizedBox(height: 14),
+                        const MarcaReclutaYa(),
+                        const SizedBox(height: 22),
                         Text(
-                          mensaje,
-                          key: const Key('mensaje'),
-                          style: tt.bodySmall!.copyWith(
-                            color: error == null ? t.naranjaProfundo : t.rojo,
+                          agregando ? 'Agregar cuenta' : 'Bienvenido de vuelta',
+                          style: tt.headlineSmall,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          agregando
+                              ? 'Entra con el correo y la contraseña de la otra cuenta.'
+                              : 'Entra con tu correo y contraseña.',
+                          style: tt.bodySmall,
+                        ),
+                        const SizedBox(height: 22),
+                        _Campo(
+                          llave: const Key('correo'),
+                          controlador: _correo,
+                          etiqueta: 'Correo',
+                          teclado: TextInputType.emailAddress,
+                          autofill: const [AutofillHints.username],
+                          accion: TextInputAction.next,
+                          autofocus: true,
+                        ),
+                        const SizedBox(height: 12),
+                        _Campo(
+                          llave: const Key('contrasena'),
+                          controlador: _contrasena,
+                          etiqueta: 'Contraseña',
+                          oculto: !_ver,
+                          autofill: const [AutofillHints.password],
+                          accion: TextInputAction.done,
+                          alEnviar: _listo && !cargando ? _entrar : null,
+                          sufijo: IconButton(
+                            onPressed: () => setState(() => _ver = !_ver),
+                            icon: Icon(
+                              _ver
+                                  ? CupertinoIcons.eye_slash
+                                  : CupertinoIcons.eye,
+                              size: 20,
+                              color: t.tintaTenue,
+                            ),
+                            tooltip: _ver ? 'Ocultar' : 'Ver',
                           ),
                         ),
-                      ],
-                      const SizedBox(height: 18),
-                      FilledButton(
-                        onPressed: _listo && !cargando ? _entrar : null,
-                        style: FilledButton.styleFrom(
-                          backgroundColor: t.verde,
-                          foregroundColor: t.tarjeta,
-                          disabledBackgroundColor: t.verde.withValues(
-                            alpha: 0.45,
+                        if (mensaje != null) ...[
+                          const SizedBox(height: 14),
+                          Text(
+                            mensaje,
+                            key: const Key('mensaje'),
+                            style: tt.bodySmall!.copyWith(
+                              color: error == null ? t.naranjaProfundo : t.rojo,
+                            ),
                           ),
-                          disabledForegroundColor: t.tarjeta,
-                          minimumSize: const Size.fromHeight(50),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(radio),
+                        ],
+                        const SizedBox(height: 18),
+                        FilledButton(
+                          onPressed: _listo && !cargando ? _entrar : null,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: t.verde,
+                            foregroundColor: t.tarjeta,
+                            disabledBackgroundColor: t.verde.withValues(
+                              alpha: 0.45,
+                            ),
+                            disabledForegroundColor: t.tarjeta,
+                            minimumSize: const Size.fromHeight(50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(radio),
+                            ),
+                            textStyle: tt.labelLarge!.copyWith(fontSize: 15),
                           ),
-                          textStyle: tt.labelLarge!.copyWith(fontSize: 15),
+                          child: cargando
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: Plataforma.esIOS
+                                      ? const CupertinoActivityIndicator(
+                                          color: CupertinoColors.white,
+                                        )
+                                      : CircularProgressIndicator(
+                                          strokeWidth: 2.2,
+                                          color: t.tarjeta,
+                                        ),
+                                )
+                              : const Text('Entrar'),
                         ),
-                        child: cargando
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: Plataforma.esIOS
-                                    ? const CupertinoActivityIndicator(
-                                        color: CupertinoColors.white,
-                                      )
-                                    : CircularProgressIndicator(
-                                        strokeWidth: 2.2,
-                                        color: t.tarjeta,
-                                      ),
-                              )
-                            : const Text('Entrar'),
-                      ),
-                      // Google y Apple (8-oct): otra puerta a una cuenta que YA existe.
-                      // Mismo alto que «Entrar»; Apple solo en iPhone (en Android
-                      // necesitaría su flujo web).
-                      const SizedBox(height: 18),
-                      const _Separador(),
-                      const SizedBox(height: 18),
-                      if (!Plataforma.esAndroid) ...[
+                        // Google y Apple (8-oct): otra puerta a una cuenta que YA existe.
+                        // Mismo alto que «Entrar»; Apple solo en iPhone (en Android
+                        // necesitaría su flujo web).
+                        const SizedBox(height: 18),
+                        const _Separador(),
+                        const SizedBox(height: 18),
+                        if (!Plataforma.esAndroid) ...[
+                          _BotonSocial(
+                            proveedor: ProveedorSocial.apple,
+                            habilitado: !cargando,
+                          ),
+                          const SizedBox(height: 10),
+                        ],
                         _BotonSocial(
-                          proveedor: ProveedorSocial.apple,
+                          proveedor: ProveedorSocial.google,
                           habilitado: !cargando,
                         ),
-                        const SizedBox(height: 10),
-                      ],
-                      _BotonSocial(
-                        proveedor: ProveedorSocial.google,
-                        habilitado: !cargando,
-                      ),
-                      const SizedBox(height: 16),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 6,
-                        children: [
-                          _Enlace(
+                        const SizedBox(height: 16),
+                        // Sin «Crear cuenta» (8-oct): la app es solo para negocios que ya
+                        // tienen cuenta; las cuentas se crean y pagan en la web (App
+                        // Review 3.1.1 y 5.1.1(v)).
+                        Center(
+                          child: _Enlace(
                             '¿Olvidaste tu contraseña?',
                             () => _abrir(_urlRecuperar),
                           ),
-                          Text('·', style: tt.bodySmall),
-                          _Enlace('Crear cuenta', () => _abrir(_urlCrear)),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

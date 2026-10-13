@@ -17,7 +17,7 @@ class FilaVacante extends StatelessWidget {
       sucursal = v.sucursal,
       detalle = _detalle(v.ubicacion, v.sueldoTexto),
       candidatos = v.candidatos,
-      sinRankear = v.sinRankear,
+      nuevosSemana = v.nuevosSemana,
       pie = textoDiasRestantes(v.diasRestantes),
       resumenCierre = null,
       estado = v.estado == 'ACTIVA' ? null : textoEstadoVacante(v.estado),
@@ -28,7 +28,7 @@ class FilaVacante extends StatelessWidget {
       sucursal = v.sucursal,
       detalle = _detalle(v.ubicacion, v.sueldoTexto),
       candidatos = v.candidatos,
-      sinRankear = 0,
+      nuevosSemana = 0,
       pie = null,
       resumenCierre = textoCerrada(v),
       estado = null,
@@ -38,7 +38,10 @@ class FilaVacante extends StatelessWidget {
   final SucursalRef? sucursal;
   final String? detalle;
   final int candidatos;
-  final int sinRankear;
+
+  /// Llegaron en los últimos 7 días (13-oct). «Sin rankear» ya no se muestra: el
+  /// ranking se hace solo al entrar.
+  final int nuevosSemana;
   final String? pie;
 
   /// Solo en cerradas: «Cerrada el … · Se archiva en N días», como texto.
@@ -125,8 +128,11 @@ class FilaVacante extends StatelessWidget {
                           : '$candidatos candidatos',
                       style: tt.labelMedium!.copyWith(color: t.tinta),
                     ),
-                    if (sinRankear > 0)
-                      ChipRY('$sinRankear sin rankear', tono: TonoChip.naranja),
+                    if (nuevosSemana > 0)
+                      ChipRY(
+                        '$nuevosSemana nuevo${nuevosSemana == 1 ? '' : 's'} esta semana',
+                        tono: TonoChip.azul,
+                      ),
                     if (pie != null && pie!.isNotEmpty) ChipRY(pie!),
                     if (contratacion)
                       const ChipRY('Hubo contratación', tono: TonoChip.verde),

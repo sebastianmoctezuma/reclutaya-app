@@ -28,6 +28,7 @@ class VacanteResumen {
     required this.slug,
     required this.candidatos,
     required this.sinRankear,
+    this.nuevosSemana = 0,
     this.ubicacion,
     this.sueldoTexto,
     this.sucursal,
@@ -47,6 +48,10 @@ class VacanteResumen {
   final SucursalRef? sucursal;
   final int candidatos;
   final int sinRankear;
+
+  /// Llegaron en los últimos 7 días (13-oct).
+  @JsonKey(defaultValue: 0)
+  final int nuevosSemana;
   final int? diasRestantes;
 
   /// Solo en el Inicio: «Revisar candidatos», «Compartir formulario»…

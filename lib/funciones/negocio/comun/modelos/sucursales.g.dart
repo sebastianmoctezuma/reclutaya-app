@@ -13,6 +13,7 @@ VacanteDeSucursal _$VacanteDeSucursalFromJson(Map<String, dynamic> json) =>
       estado: json['estado'] as String,
       candidatos: (json['candidatos'] as num?)?.toInt() ?? 0,
       sinRankear: (json['sinRankear'] as num?)?.toInt() ?? 0,
+      nuevosSemana: (json['nuevosSemana'] as num?)?.toInt() ?? 0,
     );
 
 Persona _$PersonaFromJson(Map<String, dynamic> json) => Persona(
@@ -50,6 +51,7 @@ SucursalConVacantes _$SucursalConVacantesFromJson(Map<String, dynamic> json) =>
       direccion: json['direccion'] as String?,
       activas: (json['activas'] as num?)?.toInt() ?? 0,
       sinRanking: (json['sinRanking'] as num?)?.toInt() ?? 0,
+      nuevosSemana: (json['nuevosSemana'] as num?)?.toInt() ?? 0,
       contactosUsados: (json['contactosUsados'] as num?)?.toInt() ?? 0,
       miembros:
           (json['miembros'] as List<dynamic>?)

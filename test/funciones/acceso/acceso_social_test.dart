@@ -91,4 +91,18 @@ void main() {
     expect(s.entradasSociales, isEmpty);
     expect(find.byKey(const Key('mensaje')), findsNothing);
   });
+
+  testWidgets('si la hoja de Google truena con un error ajeno, lo dice', (
+    tester,
+  ) async {
+    final s = SesionFalsa();
+    final a = AccesoSocialFalso()..lanza = Exception('plugin');
+    await tester.pumpWidget(_app(s, RepositorioFalso(), a));
+    await _tocar(tester, 'Continuar con Google');
+    expect(
+      find.text('No se pudo entrar con Google. Intenta de nuevo.'),
+      findsOneWidget,
+    );
+    expect(s.entradasSociales, isEmpty);
+  });
 }

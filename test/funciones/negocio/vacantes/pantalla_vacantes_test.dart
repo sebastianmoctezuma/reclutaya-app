@@ -28,7 +28,7 @@ void main() {
     await tester.pumpWidget(_app(RepositorioFalso()));
     await tester.pumpAndSettle();
     expect(find.text(vacanteActiva.puesto), findsOneWidget);
-    expect(find.text('3 sin rankear'), findsOneWidget);
+    expect(find.text('3 nuevos esta semana'), findsOneWidget);
     expect(find.text('40 días restantes'), findsOneWidget);
     expect(find.text('Centro'), findsOneWidget);
     expect(find.text('14 candidatos'), findsOneWidget);
@@ -88,7 +88,7 @@ void main() {
       expect(find.text('Altomar'), findsOneWidget);
       expect(find.text('Tu equipo'), findsOneWidget);
       expect(find.text('2 personas'), findsOneWidget);
-      expect(find.text('2 candidatos sin ranking'), findsOneWidget);
+      expect(find.text('2 candidatos nuevos esta semana'), findsOneWidget);
       for (final accion in ['Crear sucursal', 'Invitar', 'Agregar sucursal']) {
         expect(find.text(accion), findsNothing, reason: accion);
       }
@@ -101,10 +101,10 @@ void main() {
         await tester.tap(find.text('Altomar'));
         await tester.pumpAndSettle();
         expect(find.text('1 vacante en esta sucursal'), findsOneWidget);
-        expect(find.text('Sin ranking'), findsOneWidget);
+        expect(find.text('Nuevos esta semana'), findsOneWidget);
         expect(find.text('Contactos usados'), findsOneWidget);
         expect(find.text('Mesero'), findsOneWidget);
-        expect(find.text('2 sin ranking'), findsOneWidget);
+        expect(find.text('2 nuevos esta semana'), findsOneWidget);
         for (final accion in ['Crear vacante', 'Finalizar', 'Administrar']) {
           expect(find.text(accion), findsNothing, reason: accion);
         }

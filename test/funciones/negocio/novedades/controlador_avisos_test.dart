@@ -58,6 +58,7 @@ ProviderContainer _c(
 }
 
 void main() {
+  _pruebasAvisoPendiente();
   test('al entrar registra el teléfono con los avisos prendidos', () async {
     final r = RepositorioFalso();
     final c = _c(r, _Avisos(), AlmacenMemoria());
@@ -147,4 +148,65 @@ void main() {
       expect(sesion.salidas, 1);
     },
   );
+}
+
+// Un aviso tocado ANTES de que el arranque navegue se guarda y lo abre el arranque; uno
+// de después navega solo (13-oct). Lo que se prueba aquí es la mano a mano, sin router.
+void _pruebasAvisoPendiente() {
+  test(
+    'antes de que el arranque esté listo, el aviso se guarda y no navega',
+    () async {
+      final c = _c(RepositorioFalso(), _Avisos(), AlmacenMemoria());
+      final datos = {
+        'tipo': 'test',
+        'slug': 'cajero-x1',
+        'postulacionId': 'p9',
+      };
+      await c.read(abrirAvisoProvider)(datos);
+      expect(c.read(avisoPendienteProvider), datos);
+      expect(c.read(avisoPendienteProvider.notifier).consumir(), datos);
+      expect(
+        c.read(avisoPendienteProvider),
+        isNull,
+        reason: 'se consume una sola vez',
+      );
+    },
+  );
+
+  test(
+    'el arranque resuelve el aviso guardado a su ruta con sección',
+    () async {
+      final c = _c(RepositorioFalso(), _Avisos(), AlmacenMemoria());
+      final ruta = await resolverAviso(c.read, {
+        'tipo': 'video',
+        'slug': 'cajero-x1',
+        'postulacionId': 'p9',
+      });
+      expect(ruta, '/vacantes/cajero-x1/ranking/p9?seccion=video');
+    },
+  );
+
+  test(
+    'el arranque decide con la cuenta de la sesión, no con el llavero',
+    () async {
+      final c = _c(RepositorioFalso(), _Avisos(), AlmacenMemoria());
+      final datos = {
+        'tipo': 'test',
+        'slug': 'cajero-x1',
+        'postulacionId': 'p9',
+        'usuarioId': 'u-mia',
+      };
+      expect(
+        await resolverAviso(c.read, datos, activa: 'u-mia'),
+        '/vacantes/cajero-x1/ranking/p9?seccion=test',
+      );
+      // De otra cuenta que no está guardada: al Inicio, sin cambiar de cuenta.
+      expect(await resolverAviso(c.read, datos, activa: 'u-otra'), '/inicio');
+    },
+  );
+
+  test('un aviso mal formado no deja nada pendiente que abrir', () async {
+    final c = _c(RepositorioFalso(), _Avisos(), AlmacenMemoria());
+    expect(await resolverAviso(c.read, {'slug': '../x'}), isNull);
+  });
 }

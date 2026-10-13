@@ -42,7 +42,7 @@ class PantallaInicio extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final yo = ref.watch(yoProvider).value;
+    final yo = ref.watch(yoProvider).vigente;
     final inicio = ref.watch(inicioProvider);
     return PaginaConTitulo(
       titulo: 'Inicio',

@@ -16,6 +16,9 @@ class _Tokens implements ProveedorToken {
   bool cerrada = false;
 
   @override
+  Future<String?> tokenVigente() async => token;
+
+  @override
   Future<String?> renovar() async {
     renovaciones++;
     return token = 'nuevo';
@@ -140,21 +143,103 @@ void main() {
     expect(t.cerrada, isFalse);
   });
 
-  test('sin red → SinRed', () async {
-    servidor.responde(
-      0,
-      DioException.connectionError(
-        requestOptions: RequestOptions(path: '/yo'),
-        reason: 'off',
-      ),
-    );
+  DioException sinConexion() => DioException.connectionError(
+    requestOptions: RequestOptions(path: '/yo'),
+    reason: 'off',
+  );
+
+  test('sin red → SinRed, tras UN reintento de la lectura', () async {
+    servidor
+      ..responde(0, sinConexion())
+      ..responde(0, sinConexion());
     final r = await ClienteApi(
       base: base,
       tokens: _Tokens('abc'),
       dio: dio,
     ).get('/yo');
     expect((r as Falla<Map<String, dynamic>>).error, isA<SinRed>());
+    expect(servidor.peticiones.length, 2);
   });
+
+  test(
+    'una lectura que falla por red y luego responde, carga sin que la persona '
+    'tenga que cerrar la app (12-oct)',
+    () async {
+      servidor
+        ..responde(0, sinConexion())
+        ..responde(200, {'tipo': 'negocio'});
+      final r = await ClienteApi(
+        base: base,
+        tokens: _Tokens('abc'),
+        dio: dio,
+      ).get('/yo');
+      expect(r, isA<Exito<Map<String, dynamic>>>());
+      expect(servidor.peticiones.length, 2);
+    },
+  );
+
+  test('una ESCRITURA sin red no se repite sola', () async {
+    servidor.responde(0, sinConexion());
+    final r = await ClienteApi(
+      base: base,
+      tokens: _Tokens('abc'),
+      dio: dio,
+    ).escribir('POST', '/dispositivos', {'token': 't'});
+    expect((r as Falla<Map<String, dynamic>>).error, isA<SinRed>());
+    expect(servidor.peticiones.length, 1);
+  });
+
+  test(
+    'manda el token VIGENTE: si estaba por vencer, el ya renovado',
+    () async {
+      servidor.responde(200, {'tipo': 'negocio'});
+      final t = _TokensPorVencer();
+      await ClienteApi(base: base, tokens: t, dio: dio).get('/yo');
+      expect(
+        servidor.peticiones.single.headers['Authorization'],
+        'Bearer fresco',
+      );
+    },
+  );
+
+  test(
+    'un 401 con un token que ya cambió mientras tanto se repite con el nuevo, '
+    'sin renovar otra vez ni cerrar sesión',
+    () async {
+      servidor
+        ..responde(401, sinSesion)
+        ..responde(200, {'tipo': 'negocio'});
+      final t = _TokensQueCambian();
+      final r = await ClienteApi(base: base, tokens: t, dio: dio).get('/yo');
+      expect(r, isA<Exito<Map<String, dynamic>>>());
+      expect(
+        servidor.peticiones[1].headers['Authorization'],
+        'Bearer renovado-por-otro',
+      );
+      expect(t.renovaciones, 0);
+      expect(t.cerrada, isFalse);
+    },
+  );
+}
+
+/// El token estaba por vencer: `tokenVigente` lo renueva antes de mandarlo.
+class _TokensPorVencer extends _Tokens {
+  _TokensPorVencer() : super('por-vencer');
+
+  @override
+  Future<String?> tokenVigente() async => token = 'fresco';
+}
+
+/// Mientras la petición iba en camino, otra renovación cambió el token.
+class _TokensQueCambian extends _Tokens {
+  _TokensQueCambian() : super('viejo');
+
+  @override
+  Future<String?> tokenVigente() async {
+    final enviado = token;
+    token = 'renovado-por-otro';
+    return enviado;
+  }
 }
 
 class _TokensSinRed extends _Tokens {

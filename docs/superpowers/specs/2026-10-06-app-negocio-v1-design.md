@@ -261,7 +261,7 @@ incorrectos.»; correo sin confirmar → «Tu correo aún no está verificado. �
 enlace que te mandamos.»; sin red → banner. Al entrar, `/yo`: si es candidato, aviso y
 salir. Pie: «¿Olvidaste tu contraseña?» abre la recuperación **web** en el navegador
 (`url_launcher` a `https://app.reclutaya.com/recuperar`): la app no reimplementa ese
-flujo. «Crear cuenta» abre `https://reclutaya.com/crear-cuenta`.
+flujo. (Desde el 8-oct no hay «Crear cuenta»: la app no crea cuentas, App Review 3.1.1.)
 
 **Inicio.** Encabezado con el logo (recorte `logoFit` como la web) y el nombre del negocio;
 las cuatro tarjetas de indicadores de 30 días (velocidad, cumplen requisitos, respuesta,

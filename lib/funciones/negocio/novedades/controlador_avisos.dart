@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:reclutaya_app/funciones/cuentas/gestor_cuentas.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
 import 'package:reclutaya_app/funciones/negocio/novedades/avisos_core.dart';
@@ -160,6 +161,94 @@ final controladorAvisosProvider =
       ControladorAvisos.new,
     );
 
+/// ¿El arranque ya navegó a su destino? Hasta entonces, un aviso tocado se GUARDA
+/// (13-oct) en vez de navegar. Antes, al abrir la app desde un aviso con la app cerrada,
+/// el aviso abría la ficha y un instante después el arranque la tapaba con el Inicio.
+class ArranqueListo extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void marcar() => state = true;
+}
+
+final arranqueListoProvider = NotifierProvider<ArranqueListo, bool>(
+  ArranqueListo.new,
+);
+
+/// El aviso que llegó antes de que el arranque decidiera; el arranque lo consume.
+class AvisoPendiente extends Notifier<Map<String, dynamic>?> {
+  @override
+  Map<String, dynamic>? build() => null;
+
+  Map<String, dynamic>? get aviso => state;
+  set aviso(Map<String, dynamic>? datos) => state = datos;
+
+  Map<String, dynamic>? consumir() {
+    final d = state;
+    state = null;
+    return d;
+  }
+}
+
+final avisoPendienteProvider =
+    NotifierProvider<AvisoPendiente, Map<String, dynamic>?>(AvisoPendiente.new);
+
+/// A dónde lleva un aviso, ya resuelto: la ruta de la ficha o la vacante y, si el aviso
+/// es de OTRA cuenta guardada, el cambio de cuenta antes. null = nada que abrir (aviso
+/// mal formado, o de una cuenta que ya no está: entonces el Inicio es el destino).
+/// Lo comparten la app abierta (`abrirAvisoProvider`) y el arranque (app cerrada).
+/// `activa`: la cuenta con sesión, si quien llama ya la sabe (el arranque); si no, la
+/// primera del llavero.
+Future<String?> resolverAviso(
+  T Function<T>(ProviderListenable<T>) leer,
+  Map<String, dynamic> datos, {
+  String? activa,
+  void Function(String)? avisar,
+}) async {
+  final ruta = rutaDeAviso(datos);
+  if (ruta == null) return null;
+  final cuentas = await leer(gestorCuentasProvider.future);
+  final deCuenta = datos['usuarioId'];
+  final accion = accionAviso(
+    activa: activa ?? cuentas.firstOrNull?.usuarioId,
+    usuarioIdAviso: deCuenta is String ? deCuenta : null,
+    cuentas: cuentas,
+  );
+  switch (accion) {
+    case AccionAviso.abrir:
+      return ruta;
+    case AccionAviso.inicio:
+      return '/inicio';
+    case AccionAviso.cambiarYAbrir:
+      final negocio = await leer(gestorCuentasProvider.notifier)
+          .cambiarA(deCuenta as String);
+      if (negocio == null) return '/inicio';
+      avisar?.call('Cambiaste a $negocio');
+      return ruta;
+  }
+}
+
+/// Abre lo que dice un aviso tocado. Si el arranque todavía no navegó, lo guarda para
+/// que el arranque lo abra; si ya, navega de inmediato (app abierta o en segundo plano).
+final abrirAvisoProvider =
+    Provider<Future<void> Function(Map<String, dynamic>?)>((ref) {
+      return (datos) async {
+        if (datos == null) return;
+        if (!ref.read(arranqueListoProvider)) {
+          ref.read(avisoPendienteProvider.notifier).aviso = datos;
+          return;
+        }
+        final ruta = await resolverAviso(
+          ref.read,
+          datos,
+          avisar: (m) => mostrarMensaje(ref, m),
+        );
+        if (ruta == null) return;
+        ref.invalidate(novedadesProvider);
+        ref.read(routerProvider).go(ruta);
+      };
+    });
+
 /// Une los avisos con la sesión y la navegación: al ENTRAR registra el teléfono, y al
 /// tocar un aviso (con la app abierta, en segundo plano o cerrada) abre lo que dice.
 /// `App` lo observa, como la limpieza de sesión.
@@ -177,36 +266,7 @@ final avisosSesionProvider = Provider<void>((ref) {
       unawaited(avisosCtl.alPerderSesion());
     }
   }, fireImmediately: true);
-  Future<void> abrir(Map<String, dynamic>? datos) async {
-    if (datos == null) return;
-    final ruta = rutaDeAviso(datos);
-    if (ruta == null) return;
-    final gestor = ref.read(gestorCuentasProvider.notifier);
-    final cuentas = await ref.read(gestorCuentasProvider.future);
-    final deCuenta = datos['usuarioId'];
-    final accion = accionAviso(
-      activa: cuentas.firstOrNull?.usuarioId,
-      usuarioIdAviso: deCuenta is String ? deCuenta : null,
-      cuentas: cuentas,
-    );
-    final router = ref.read(routerProvider);
-    switch (accion) {
-      case AccionAviso.abrir:
-        ref.invalidate(novedadesProvider);
-        router.go(ruta);
-      case AccionAviso.inicio:
-        router.go('/inicio');
-      case AccionAviso.cambiarYAbrir:
-        final negocio = await gestor.cambiarA(deCuenta as String);
-        if (negocio == null) {
-          router.go('/inicio');
-          return;
-        }
-        router.go(ruta);
-        mostrarMensaje(ref, 'Cambiaste a $negocio');
-    }
-  }
-
+  final abrir = ref.read(abrirAvisoProvider);
   final sub = avisos.tocados.listen((d) => unawaited(abrir(d)));
   ref.onDispose(sub.cancel);
   unawaited(avisos.tocadoAlAbrir().then(abrir));

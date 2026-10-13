@@ -31,7 +31,7 @@ class VacantesPorSucursal extends ConsumerWidget {
       }
       return alternativa;
     }
-    final datos = s.value;
+    final datos = s.vigente;
     if (datos == null) {
       return SliverPadding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),

@@ -10,6 +10,7 @@ class VacanteDeSucursal {
     required this.estado,
     this.candidatos = 0,
     this.sinRankear = 0,
+    this.nuevosSemana = 0,
   });
 
   factory VacanteDeSucursal.fromJson(Map<String, dynamic> json) =>
@@ -22,6 +23,10 @@ class VacanteDeSucursal {
   final int candidatos;
   @JsonKey(defaultValue: 0)
   final int sinRankear;
+
+  /// Llegaron en los últimos 7 días (13-oct).
+  @JsonKey(defaultValue: 0)
+  final int nuevosSemana;
 }
 
 /// Una persona del equipo, como la pinta la web: nombre, iniciales y, en «Ver equipo»,
@@ -69,6 +74,7 @@ class SucursalConVacantes {
     this.direccion,
     this.activas = 0,
     this.sinRanking = 0,
+    this.nuevosSemana = 0,
     this.contactosUsados = 0,
     this.miembros = const [],
   });
@@ -96,6 +102,10 @@ class SucursalConVacantes {
   final int activas;
   @JsonKey(defaultValue: 0)
   final int sinRanking;
+
+  /// «Nuevos esta semana» (13-oct): sustituye a «Sin ranking» en la ventana.
+  @JsonKey(defaultValue: 0)
+  final int nuevosSemana;
   @JsonKey(defaultValue: 0)
   final int contactosUsados;
   @JsonKey(defaultValue: <Persona>[])

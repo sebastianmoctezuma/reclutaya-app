@@ -13,6 +13,7 @@ import 'package:reclutaya_app/funciones/negocio/novedades/controlador_avisos.dar
 import 'package:reclutaya_app/nucleo/sesion/arranque_core.dart';
 import 'package:reclutaya_app/nucleo/sesion/providers.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
+import 'package:reclutaya_app/nucleo/ui/mensaje_global.dart';
 import 'package:reclutaya_app/nucleo/vidrio/vidrio.dart';
 
 const _cierre = Duration(milliseconds: 380);
@@ -55,7 +56,7 @@ class _PantallaArranqueState extends ConsumerState<PantallaArranque>
       nivel = _nivelAlCerrar + (1 - _nivelAlCerrar) * suave;
       if (k >= 1 && _destino != null && mounted) {
         _ticker.stop();
-        context.go(_destino!);
+        _navegar(_destino!);
         return;
       }
     }
@@ -68,12 +69,18 @@ class _PantallaArranqueState extends ConsumerState<PantallaArranque>
   Future<void> _decidir() async {
     final sesion = ref.read(sesionProvider);
     String? tipo;
+    String? usuarioId;
     if (sesion.autenticado) {
       final yo = await yoAlArrancar(ref.read);
       if (yo != null) {
         tipo = yo.tipo;
+        usuarioId = yo.usuarioId;
         if (yo.esNegocio) {
-          await ref.read(gestorCuentasProvider.notifier).recordarActiva(yo);
+          // Sin esperar (12-oct): guarda la cuenta para el selector, en Keychain, y
+          // nada de lo que se pinta en Inicio depende de que haya terminado.
+          unawaited(
+            ref.read(gestorCuentasProvider.notifier).recordarActiva(yo),
+          );
         }
       }
     }
@@ -82,11 +89,32 @@ class _PantallaArranqueState extends ConsumerState<PantallaArranque>
       haySesion: sesion.autenticado,
       tipoYo: tipo,
     );
+    // Un aviso que llegó con la app cerrada solo se atiende si el destino es el
+    // negocio; sin sesión (o con una de candidato) se descarta, para que no cambie
+    // de cuenta ni abra nada después de «Entrar».
+    final pendiente = ref.read(avisoPendienteProvider.notifier).consumir();
     switch (destino) {
       case DestinoArranque.entrar:
         _ir('/entrar');
       case DestinoArranque.negocio:
-        _ir('/inicio');
+        // Si la app se abrió desde un aviso (13-oct), el destino es lo que dice el
+        // aviso, no el Inicio: antes el Inicio lo tapaba un instante después. La
+        // cuenta activa es la de la sesión que acaba de responder, no la primera del
+        // llavero: `recordarActiva` corre sin esperar y el llavero puede ir atrasado.
+        var ruta = '/inicio';
+        if (pendiente != null) {
+          ruta =
+              await resolverAviso(
+                ref.read,
+                pendiente,
+                activa: usuarioId,
+                avisar: (m) =>
+                    mostrarMensajeEn(ref.read(mensajeriaProvider), m),
+              ) ??
+              '/inicio';
+          if (!mounted) return;
+        }
+        _ir(ruta);
       case DestinoArranque.candidatoNoSoportado:
         ref.read(avisoAccesoProvider.notifier).aviso = avisoSoloNegocios;
         await ref.read(cerrarSesionProvider)();
@@ -94,10 +122,19 @@ class _PantallaArranqueState extends ConsumerState<PantallaArranque>
     }
   }
 
+  /// La navegación real. Después de ella el arranque está LISTO: un aviso que llegue
+  /// desde ahora navega solo, y uno que haya llegado durante el cierre se abre ya.
+  void _navegar(String ruta) {
+    context.go(ruta);
+    ref.read(arranqueListoProvider.notifier).marcar();
+    final tarde = ref.read(avisoPendienteProvider.notifier).consumir();
+    if (tarde != null) unawaited(ref.read(abrirAvisoProvider)(tarde));
+  }
+
   void _ir(String ruta) {
     if (vidrioSolido(context)) {
       _ticker.stop();
-      context.go(ruta);
+      _navegar(ruta);
       return;
     }
     _destino = ruta;

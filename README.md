@@ -64,10 +64,29 @@ Sube `build/ios/ipa/*.ipa` con Transporter (o abre `build/ios/archive/Runner.xca
 Xcode → Distribute App). `<N>` debe subir en cada envío. Versión visible: `version` en
 `pubspec.yaml`.
 
-**Estado (8-oct-2026):** la compilación **1.0.0 (5)** está en TestFlight con el grupo
-interno «Reclutaya app» (5 testers: Antonio con sus dos correos, Job, Sergio y
-Sebastián). La siguiente entrega va con `--build-number=6` o más (Apple rechaza uno
-repetido). Lo que trae la 5, además de varias cuentas y avisos:
+**Estado (13-oct-2026):** la compilación **1.0.0 (11)** (la 10 se construyó el mismo día y no llegó a TestFlight: la revisión encontró que el cuerpo de la ficha iba en un `SliverList` perezoso y la sección del test, abajo del todo, no existía aún cuando el aviso quería desplazarse a ella; hoy el cuerpo es una sola caja, `SliverToBoxAdapter`, y una prueba de pantalla lo amarra) trae dos cosas: (1) **los avisos
+abren la ficha en la sección exacta** —un test, un video o un documento llegan con
+`?seccion=` y la ficha se desplaza sola hasta ahí— y funcionan también con la app CERRADA:
+el aviso tocado se guarda (`avisoPendienteProvider`) y el arranque lo abre en vez de tapar
+la ficha con el Inicio (`arranqueListoProvider`); (2) **ya no existe «sin ranking»**: el
+ranking se hace solo en el servidor cada vez que la app pide `/yo` o el Inicio; «Candidatos
+nuevos» pasó a «Candidatos nuevos esta semana» y las sucursales dicen «Nuevos esta semana»
+(`nuevosSemana`). La siguiente va con `--build-number=12` o más. La **9** (12-oct) trae la
+sesión que no se cae y el arranque más rápido (ver «La sesión se queda…» y «Arranque y
+regreso del fondo» abajo). La **8** es la que está en App Review, en TestFlight con el grupo interno «Reclutaya app» (5
+testers: Antonio con sus dos correos, Job, Sergio y Sebastián). La 8 deja la app lista para revisión: **sin «Crear
+cuenta»** (la app es solo para negocios que ya tienen cuenta; las cuentas se crean, pagan
+y eliminan en la web — así no aplican las reglas 3.1.1 ni 5.1.1(v), y NO se agrega
+«Eliminar cuenta» por eso), **solo iPhone** (`TARGETED_DEVICE_FAMILY = 1`: sin capturas
+ni revisión de iPad) y la barra de estado legible en Entrar. Nota para el revisor: «La
+app es solo para negocios registrados. Las cuentas se crean y se eliminan en
+reclutaya.com; la app no crea cuentas.» La 7 corrige dos cosas: si la hoja de Google o Apple falla con un error del
+plugin nativo, la pantalla lo dice (antes el primer intento fallido no mostraba nada), y
+al cambiar de cuenta, cerrar sesión o entrar con otra, cada pantalla pasa a «cargando»
+en vez de pintar un instante los datos de la cuenta anterior (`invalidate(asReload:
+true)` + `AsyncValue.vigente`). La 6 agrega **«Continuar con Google» y «Continuar con Apple»** (ver la sección
+al final) sobre lo de la 5; la firma ya trae `com.apple.developer.applesignin`. Lo que
+trajo la 5, además de varias cuentas y avisos:
 
 - **Tarjetas sólidas** con la superelipse de iOS (`RoundedSuperellipseBorder`; la
   `ContinuousRectangleBorder` abombaba los lados) y sin desenfoque por tarjeta.
@@ -130,6 +149,22 @@ test/            espejo de lib/ + apoyo/ (datos, repositorio falso, sesión fals
 - **Avisos:** Firebase va detrás de `ServicioAvisos` (las pruebas usan uno falso). En iPhone se
   espera el token de APNs hasta 5 s (`esperarValor`). Al perder la sesión por cualquier camino
   el teléfono borra su token (`olvidarToken`): ningún aviso de la cuenta anterior llega.
+- **La sesión se queda mientras no la rechacen de forma definitiva** (12-oct). Antes, una
+  falla de RED al renovar el token se trataba como «la sesión ya no vale» y la app sacaba a la
+  persona: Supabase lanza `AuthRetryableFetchException`, que hereda de `AuthException`. Hoy solo
+  vence con un rechazo 4xx del proveedor (contraseña cambiada, sesión revocada); red, 5xx y 429
+  son `SinRed` y la sesión se conserva (`renovacion_core.dart`, con prueba). Los errores del flujo
+  de Supabase ya no llegan al router (`cambios` los filtra) y, si Supabase cierra la sesión por su
+  cuenta, Entrar dice «Tu sesión terminó». En la web, cambiar la contraseña cierra las demás
+  sesiones: la app lo nota en su siguiente renovación.
+- **Arranque y regreso del fondo** (12-oct). `main` corre en paralelo el formato de fechas, el
+  vidrio y la sesión; el Keychain se lee una vez (copia en memoria en `_AlmacenSeguro`, antes
+  cuatro lecturas); la cuenta activa se guarda sin bloquear la navegación. Cada petición manda el
+  token ya renovado si estaba por vencer (`tokenVigente`: antes, al abrir la app tras horas en el
+  fondo, eran 401 → renovar → repetir). Al volver del fondo (`alVolverProvider`): conexiones
+  nuevas (iOS cierra los sockets y la primera petición se quedaba colgada hasta el timeout: «no
+  carga hasta cerrar la app»), una lectura que falla por red se reintenta una vez, y si estuvo
+  fuera más de un minuto o algo quedó en error, lo principal se vuelve a pedir por detrás.
 - **Nada se redibuja dentro de un aviso de desplazamiento:** el fondo verde se pinta con un
   `CustomPainter` atado al desplazamiento y el dock se esconde en el cuadro siguiente. Un
   `setState` ahí congelaba la barra y dejaba el fondo fijo.
@@ -173,3 +208,11 @@ La app es **solo para entrar**: Google y Apple son otra puerta a una cuenta que 
   «Reclutaya»), su esquema al revés en `Info.plist` (`CFBundleURLTypes`) y el permiso
   `com.apple.developer.applesignin` en `Runner.entitlements` (con «Sign In with Apple»
   activado en el App ID). Apple solo aparece en iPhone.
+- Fuera del código (hecho el 8-oct): cliente OAuth **iOS** «ReclutaYa iOS» en Google
+  Cloud (sin App Check), agregado AL FINAL de «Client IDs» del proveedor Google en
+  Supabase (el cliente web y su secreto no se tocaron; «Skip nonce checks» apagado);
+  proveedor **Apple** en Supabase con `com.reclutaya.app` y la llave secreta VACÍA (solo
+  sirve para Apple en la web, que no usamos). Ojo: Chrome autorrellena esos campos con
+  el correo y la contraseña guardados — revisar antes de guardar.
+- Para App Review: nota «La app es solo para negocios con cuenta existente; las cuentas
+  se crean en reclutaya.com» y una cuenta de prueba. Apple está por la regla 4.8.
