@@ -5,17 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:reclutaya_app/funciones/cascaron/pestanas_core.dart';
 import 'package:reclutaya_app/funciones/cuentas/selector_cuentas.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
-import 'package:reclutaya_app/funciones/negocio/inicio/inicio_core.dart';
 import 'package:reclutaya_app/nucleo/plataforma/plataforma.dart';
 import 'package:reclutaya_app/nucleo/tema/tokens.dart';
 import 'package:reclutaya_app/nucleo/ui/logo_negocio.dart';
 import 'package:reclutaya_app/nucleo/vidrio/barra_pestanas.dart';
 
-/// El cascarón de las tres pestañas: Inicio · Vacantes (o «Sucursales» si la cuenta
-/// tiene varias, como en la web) · Cuenta. El cuerpo se
-/// extiende bajo la barra (que flota, de vidrio en iOS).
+/// El cascarón de las pestañas: Inicio · Vacantes · Cuenta, y con varias sucursales
+/// también «Sucursales» después de «Vacantes» (14-oct, como el menú de la web). El
+/// cuerpo se extiende bajo la barra (que flota, de vidrio en iOS).
 class PantallaCascaron extends ConsumerStatefulWidget {
   const PantallaCascaron({required this.shell, super.key});
 
@@ -63,22 +63,34 @@ class _PantallaCascaronState extends ConsumerState<PantallaCascaron> {
     final yo = ref.watch(yoProvider).vigente;
     final multi = yo?.variasSucursales ?? false;
     final empresa = yo?.empresa;
-    final items = [
-      PestanaItem(
+    final ramas = ramasVisibles(variasSucursales: multi);
+    final pestana = pestanaDeRama(shell.currentIndex, ramas);
+    if (pestana == null) {
+      // Abierta en «Sucursales» y la cuenta ya no tiene varias: a «Vacantes».
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.shell.goBranch(ramaVacantes);
+      });
+    }
+    final porRama = <int, PestanaItem>{
+      ramaInicio: PestanaItem(
         icono: ios ? CupertinoIcons.house : Icons.home_outlined,
         iconoActivo: ios ? CupertinoIcons.house_fill : Icons.home_rounded,
         etiqueta: 'Inicio',
       ),
-      PestanaItem(
-        icono: multi
-            ? (ios ? CupertinoIcons.building_2_fill : Icons.storefront_outlined)
-            : (ios ? CupertinoIcons.briefcase : Icons.work_outline_rounded),
-        iconoActivo: multi
-            ? (ios ? CupertinoIcons.building_2_fill : Icons.storefront_rounded)
-            : (ios ? CupertinoIcons.briefcase_fill : Icons.work_rounded),
-        etiqueta: nombrePestanaVacantes(variasSucursales: multi),
+      ramaVacantes: PestanaItem(
+        icono: ios ? CupertinoIcons.briefcase : Icons.work_outline_rounded,
+        iconoActivo: ios ? CupertinoIcons.briefcase_fill : Icons.work_rounded,
+        etiqueta: 'Vacantes',
       ),
-      PestanaItem(
+      // El mismo ícono de tienda que la web (`IconSucursales`, 14-oct).
+      ramaSucursales: PestanaItem(
+        icono: ios ? CupertinoIcons.building_2_fill : Icons.storefront_outlined,
+        iconoActivo: ios
+            ? CupertinoIcons.building_2_fill
+            : Icons.storefront_rounded,
+        etiqueta: 'Sucursales',
+      ),
+      ramaCuenta: PestanaItem(
         icono: ios ? CupertinoIcons.person : Icons.person_outline_rounded,
         iconoActivo: ios ? CupertinoIcons.person_fill : Icons.person_rounded,
         etiqueta: 'Cuenta',
@@ -93,7 +105,8 @@ class _PantallaCascaronState extends ConsumerState<PantallaCascaron> {
                 activa: activa,
               ),
       ),
-    ];
+    };
+    final items = [for (final r in ramas) porRama[r]!];
     return Scaffold(
       extendBody: true,
       body: NotificationListener<ScrollUpdateNotification>(
@@ -103,17 +116,18 @@ class _PantallaCascaronState extends ConsumerState<PantallaCascaron> {
       bottomNavigationBar: BarraPestanas(
         // Con VoiceOver no se compacta: sin nombres, el lector no sabría qué es cada una.
         compacta: !_barraVisible && !MediaQuery.accessibleNavigationOf(context),
-        indice: shell.currentIndex,
+        indice: pestana ?? 1,
         items: items,
         // Dejar presionada «Cuenta»: las cuentas del teléfono (como Instagram).
         alMantener: (i) {
-          if (i == items.length - 1) {
+          if (ramas[i] == ramaCuenta) {
             unawaited(mostrarSelectorCuentas(context));
           }
         },
         alCambiar: (i) {
           setState(() => _barraVisible = true);
-          shell.goBranch(i, initialLocation: i == shell.currentIndex);
+          final rama = ramas[i];
+          shell.goBranch(rama, initialLocation: rama == shell.currentIndex);
         },
       ),
     );

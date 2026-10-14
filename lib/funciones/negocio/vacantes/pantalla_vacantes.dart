@@ -1,67 +1,35 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:reclutaya_app/funciones/negocio/comun/modelos/sucursales.dart';
+import 'package:reclutaya_app/funciones/negocio/comun/precarga.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
-import 'package:reclutaya_app/funciones/negocio/inicio/inicio_core.dart';
-import 'package:reclutaya_app/funciones/negocio/sucursales/sucursales_vista.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/fila_vacante.dart';
-import 'package:reclutaya_app/funciones/negocio/vacantes/por_sucursal.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
 import 'package:reclutaya_app/nucleo/red/errores_api.dart';
 import 'package:reclutaya_app/nucleo/ui/estados.dart';
 import 'package:reclutaya_app/nucleo/vidrio/segmentado.dart';
 
-enum EstadoLista { sucursales, activas, cerradas }
+enum EstadoLista { activas, cerradas }
 
-/// Activas | Cerradas. El segmentado queda pegado arriba al desplazar. Con varias
-/// sucursales la pestaña se llama «Sucursales» (como en la web) y las activas se
-/// agrupan por sucursal.
+/// «Vacantes»: Activas | Cerradas, con el segmentado pegado arriba al desplazar. Cada
+/// fila lleva su sucursal. Las sucursales tienen su propia pestaña desde el 14-oct
+/// (como el menú de la web); antes vivían aquí como un tercer segmento.
 class PantallaVacantes extends ConsumerStatefulWidget {
-  const PantallaVacantes({this.abrirSucursal, this.visita, super.key});
-
-  /// Llegar desde una sucursal del Inicio (8-oct): esta pestaña se abre con la hoja de
-  /// ESA sucursal. `visita` distingue un toque de otro a la misma sucursal.
-  final String? abrirSucursal;
-  final String? visita;
+  const PantallaVacantes({super.key});
 
   @override
   ConsumerState<PantallaVacantes> createState() => _PantallaVacantesState();
 }
 
 class _PantallaVacantesState extends ConsumerState<PantallaVacantes> {
-  /// null = el de entrada: «Sucursales» si la cuenta tiene varias, si no «Activas».
-  EstadoLista? _elegida;
-
-  /// La visita ya atendida: la hoja se abre UNA vez por toque, no al volver a la pestaña.
-  String? _atendida;
-
-  /// Si se llegó desde una sucursal del Inicio, abre su hoja en cuanto están los datos.
-  void _abrirSiToca(Sucursales? datos) {
-    final id = widget.abrirSucursal;
-    final visita = '$id·${widget.visita}';
-    if (id == null || datos == null || _atendida == visita) return;
-    final s = datos.items.where((x) => x.id == id).firstOrNull;
-    _atendida = visita;
-    if (s == null) return;
-    if (_elegida != EstadoLista.sucursales) {
-      setState(() => _elegida = EstadoLista.sucursales);
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(mostrarSucursal(context, s));
-    });
-  }
+  EstadoLista _elegida = EstadoLista.activas;
 
   Future<void> _refrescar(EstadoLista lista) async {
     ref
       ..invalidate(vacantesActivasProvider)
-      ..invalidate(vacantesCerradasProvider)
-      ..invalidate(sucursalesProvider);
+      ..invalidate(vacantesCerradasProvider);
     try {
       await switch (lista) {
-        EstadoLista.sucursales => ref.read(sucursalesProvider.future),
         EstadoLista.activas => ref.read(vacantesActivasProvider.future),
         EstadoLista.cerradas => ref.read(vacantesCerradasProvider.future),
       };
@@ -72,28 +40,17 @@ class _PantallaVacantesState extends ConsumerState<PantallaVacantes> {
 
   @override
   Widget build(BuildContext context) {
-    final multi = ref.watch(yoProvider).vigente?.variasSucursales ?? false;
-    if (widget.abrirSucursal != null) {
-      final datos = ref.watch(sucursalesProvider).vigente;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _abrirSiToca(datos);
-      });
-    }
-    var lista =
-        _elegida ?? (multi ? EstadoLista.sucursales : EstadoLista.activas);
-    if (!multi && lista == EstadoLista.sucursales) lista = EstadoLista.activas;
+    final lista = _elegida;
     return PaginaConTitulo(
-      // Con varias sucursales el selector ya dice dónde estás: sin título arriba.
-      titulo: multi ? '' : nombrePestanaVacantes(variasSucursales: multi),
+      titulo: 'Vacantes',
       alRefrescar: () => _refrescar(lista),
       slivers: [
         SliverPersistentHeader(
           delegate: _Pegado(
             alto: MediaQuery.textScalerOf(context).scale(58),
             hijo: Segmentado<EstadoLista>(
-              opciones: {
-                if (multi) EstadoLista.sucursales: 'Sucursales',
-                EstadoLista.activas: multi ? 'Vacantes' : 'Activas',
+              opciones: const {
+                EstadoLista.activas: 'Activas',
                 EstadoLista.cerradas: 'Cerradas',
               },
               valor: lista,
@@ -102,9 +59,6 @@ class _PantallaVacantesState extends ConsumerState<PantallaVacantes> {
           ),
         ),
         switch (lista) {
-          EstadoLista.sucursales => VacantesPorSucursal(
-            alternativa: _Activas(),
-          ),
           EstadoLista.activas => _Activas(),
           EstadoLista.cerradas => _Cerradas(),
         },
@@ -136,9 +90,12 @@ class _Activas extends ConsumerWidget {
                 sliver: SliverList.separated(
                   itemCount: vs.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) => FilaVacante.activa(
-                    vs[i],
-                    alTocar: () => context.go('/vacantes/${vs[i].slug}'),
+                  itemBuilder: (context, i) => PrecargaAlTocar.vacante(
+                    vs[i].slug,
+                    child: FilaVacante.activa(
+                      vs[i],
+                      alTocar: () => context.go('/vacantes/${vs[i].slug}'),
+                    ),
                   ),
                 ),
               ),
@@ -171,9 +128,12 @@ class _Cerradas extends ConsumerWidget {
                 sliver: SliverList.separated(
                   itemCount: vs.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) => FilaVacante.cerrada(
-                    vs[i],
-                    alTocar: () => context.go('/vacantes/${vs[i].slug}'),
+                  itemBuilder: (context, i) => PrecargaAlTocar.vacante(
+                    vs[i].slug,
+                    child: FilaVacante.cerrada(
+                      vs[i],
+                      alTocar: () => context.go('/vacantes/${vs[i].slug}'),
+                    ),
                   ),
                 ),
               ),

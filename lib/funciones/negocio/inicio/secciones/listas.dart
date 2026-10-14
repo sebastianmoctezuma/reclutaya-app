@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/inicio.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/vacantes.dart';
+import 'package:reclutaya_app/funciones/negocio/comun/precarga.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/presentacion.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/inicio_core.dart';
 import 'package:reclutaya_app/funciones/negocio/inicio/secciones/comunes.dart';
@@ -61,7 +62,7 @@ class _MiniSucursal extends StatelessWidget {
       // visita, para que volver a tocar la misma la vuelva a abrir.
       alTocar: () => _ir(
         context,
-        '/vacantes?sucursal=${s.id}&t=${DateTime.now().millisecondsSinceEpoch}',
+        '/sucursales?sucursal=${s.id}&t=${DateTime.now().millisecondsSinceEpoch}',
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,52 +415,55 @@ class VacantesEnCurso extends StatelessWidget {
     return Column(
       children: [
         for (final v in vacantes) ...[
-          Tarjeta(
-            padding: EdgeInsets.zero,
-            alTocar: () => _ir(context, '/vacantes/${v.slug}'),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          Text(v.puesto, style: tt.titleLarge),
-                          if (conSucursal && v.sucursal != null)
-                            _ChipSucursal(v.sucursal!),
-                        ],
-                      ),
-                      if (v.ubicacion != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          v.ubicacion!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: tt.bodySmall,
+          PrecargaAlTocar.vacante(
+            v.slug,
+            child: Tarjeta(
+              padding: EdgeInsets.zero,
+              alTocar: () => _ir(context, '/vacantes/${v.slug}'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(v.puesto, style: tt.titleLarge),
+                            if (conSucursal && v.sucursal != null)
+                              _ChipSucursal(v.sucursal!),
+                          ],
                         ),
+                        if (v.ubicacion != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            v.ubicacion!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: tt.bodySmall,
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                _Dato('Estado', _Estado(v.estado)),
-                _Dato(
-                  'Candidatos',
-                  Text('${v.candidatos}', style: tt.labelLarge),
-                ),
-                // El siguiente paso es una ACCIÓN y se ve como tal (8-oct, principios
-                // de Apple): botón teñido con chevron, no un dato más de la tabla.
-                if (v.siguientePaso != null)
-                  _BotonSiguiente(
-                    texto: v.siguientePaso!,
-                    alTocar: () => _ir(context, '/vacantes/${v.slug}'),
+                  _Dato('Estado', _Estado(v.estado)),
+                  _Dato(
+                    'Candidatos',
+                    Text('${v.candidatos}', style: tt.labelLarge),
                   ),
-              ],
+                  // El siguiente paso es una ACCIÓN y se ve como tal (8-oct, principios
+                  // de Apple): botón teñido con chevron, no un dato más de la tabla.
+                  if (v.siguientePaso != null)
+                    _BotonSiguiente(
+                      texto: v.siguientePaso!,
+                      alTocar: () => _ir(context, '/vacantes/${v.slug}'),
+                    ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 10),

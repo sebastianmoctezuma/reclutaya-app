@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/ranking.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/vacantes.dart';
+import 'package:reclutaya_app/funciones/negocio/comun/precarga.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/presentacion.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/revalidar_al_entrar.dart';
@@ -57,7 +58,7 @@ class PantallaVacante extends ConsumerWidget {
               ?.where((x) => x.slug == slug)
               .firstOrNull
         : null;
-    if ((resumen?.candidatos ?? 0) > 0) {
+    if (resumen == null || resumen.candidatos > 0) {
       ref.listen(rankingProvider(slug), (_, _) {});
     }
     final v = ficha.vigente;
@@ -73,7 +74,8 @@ class PantallaVacante extends ConsumerWidget {
         }
       },
       child: PaginaConTitulo(
-        titulo: v?.puesto ?? 'Vacante',
+        // Mientras llega la ficha, el puesto que ya trae la lista (14-oct).
+        titulo: v?.puesto ?? resumen?.puesto ?? 'Vacante',
         subtitulo: v == null ? null : _Subtitulo(v),
         alRefrescar: () => _refrescar(ref),
         slivers: [
@@ -243,6 +245,23 @@ class _Cabecera extends StatelessWidget {
             if (i > 0) Divider(height: 1, indent: 58, color: t.linea),
             r,
           ],
+          // Se abrió en varias sucursales (14-oct): como el chip de la web, plegado.
+          if (v.grupo case GrupoVacante(:final hermanas)
+              when hermanas.length >= 2)
+            _Plegable(
+              titulo: 'En ${hermanas.length} sucursales',
+              hijo: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Cada sucursal tiene sus propios candidatos.',
+                    style: tt.bodySmall,
+                  ),
+                  const SizedBox(height: 6),
+                  for (final h in hermanas) _Hermana(h),
+                ],
+              ),
+            ),
           if (v.descripcion != null && v.descripcion!.trim().isNotEmpty)
             _Plegable(
               titulo: 'Descripción de la vacante',
@@ -266,6 +285,65 @@ class _Cabecera extends StatelessWidget {
                   ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Una vacante hermana del grupo: su sucursal y su estado. Se abre al tocarla, salvo
+/// la que se está viendo o una que quien mira no puede abrir (`slug` null).
+class _Hermana extends StatelessWidget {
+  const _Hermana(this.h);
+
+  final HermanaGrupo h;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final tt = Theme.of(context).textTheme;
+    final slug = h.slug;
+    final abre = slug != null && !h.esta;
+    final fila = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 9),
+      child: Row(
+        children: [
+          Icon(Icons.storefront_rounded, size: 18, color: t.tintaSuave),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              h.sucursal ?? 'Sin sucursal',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: tt.labelLarge!.copyWith(
+                color: abre ? t.verdeProfundo : t.tinta,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (h.esta)
+            const ChipRY('Esta', tono: TonoChip.verde)
+          else
+            ChipRY(
+              h.estado == 'ACTIVA' ? 'Abierta' : textoEstadoVacante(h.estado),
+            ),
+          if (abre) ...[
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right_rounded, size: 20, color: t.tintaTenue),
+          ],
+        ],
+      ),
+    );
+    if (!abre) return fila;
+    return Semantics(
+      button: true,
+      label: 'Abrir la vacante de ${h.sucursal ?? 'esa sucursal'}',
+      excludeSemantics: true,
+      child: PrecargaAlTocar.vacante(
+        slug,
+        child: InkWell(
+          onTap: () => context.push('/vacantes/$slug'),
+          child: fila,
+        ),
       ),
     );
   }
@@ -565,10 +643,13 @@ class _RankingState extends ConsumerState<_Ranking> {
                     itemBuilder: (context, i) {
                       if (i < filas.length) {
                         final f = filas[i];
-                        return FilaCandidato(
-                          fila: f,
-                          alTocar: () => context.go(
-                            '/vacantes/$slug/ranking/${f.postulacionId}',
+                        return PrecargaAlTocar.candidato(
+                          f.postulacionId,
+                          child: FilaCandidato(
+                            fila: f,
+                            alTocar: () => context.go(
+                              '/vacantes/$slug/ranking/${f.postulacionId}',
+                            ),
                           ),
                         );
                       }

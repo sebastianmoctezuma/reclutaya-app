@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/modelos/sucursales.dart';
+import 'package:reclutaya_app/funciones/negocio/comun/precarga.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/presentacion.dart';
 import 'package:reclutaya_app/funciones/negocio/sucursales/piezas.dart';
 import 'package:reclutaya_app/nucleo/plataforma/adaptativos.dart';
@@ -381,64 +382,71 @@ class _VacanteDeSucursal extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.t;
     final tt = Theme.of(context).textTheme;
-    return Material(
-      color: t.tarjeta,
-      shape: formaTarjeta(radio),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          final router = GoRouter.maybeOf(context);
-          Navigator.pop(context);
-          router?.go('/vacantes/${v.slug}');
-        },
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            v.puesto,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: tt.titleMedium,
-                          ),
-                        ),
-                        if (v.estado != 'ACTIVA') ...[
-                          const SizedBox(width: 6),
-                          ChipRY(textoEstadoVacante(v.estado)),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Wrap(
-                      spacing: 4,
-                      children: [
-                        Text(
-                          plural(v.candidatos, 'candidato', 'candidatos'),
-                          style: tt.bodySmall,
-                        ),
-                        if (v.nuevosSemana > 0) ...[
-                          Text('·', style: tt.bodySmall),
-                          Text(
-                            '${v.nuevosSemana} nuevo${v.nuevosSemana == 1 ? '' : 's'} esta semana',
-                            style: tt.labelMedium!.copyWith(
-                              color: t.tintaSuave,
+    return PrecargaAlTocar.vacante(
+      v.slug,
+      child: Material(
+        color: t.tarjeta,
+        shape: formaTarjeta(radio),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () {
+            final router = GoRouter.maybeOf(context);
+            Navigator.pop(context);
+            router?.go('/vacantes/${v.slug}');
+          },
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              v.puesto,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: tt.titleMedium,
                             ),
                           ),
+                          if (v.estado != 'ACTIVA') ...[
+                            const SizedBox(width: 6),
+                            ChipRY(textoEstadoVacante(v.estado)),
+                          ],
                         ],
-                      ],
-                    ),
-                  ],
+                      ),
+                      const SizedBox(height: 2),
+                      Wrap(
+                        spacing: 4,
+                        children: [
+                          Text(
+                            plural(v.candidatos, 'candidato', 'candidatos'),
+                            style: tt.bodySmall,
+                          ),
+                          if (v.nuevosSemana > 0) ...[
+                            Text('·', style: tt.bodySmall),
+                            Text(
+                              '${v.nuevosSemana} nuevo${v.nuevosSemana == 1 ? '' : 's'} esta semana',
+                              style: tt.labelMedium!.copyWith(
+                                color: t.tintaSuave,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Icon(CupertinoIcons.chevron_right, size: 15, color: t.tintaTenue),
-            ],
+                Icon(
+                  CupertinoIcons.chevron_right,
+                  size: 15,
+                  color: t.tintaTenue,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -153,6 +153,7 @@ class VacanteFicha {
     this.cerradaAt,
     this.huboContratacion,
     this.preguntas = const [],
+    this.grupo,
   });
 
   factory VacanteFicha.fromJson(Map<String, dynamic> json) =>
@@ -179,4 +180,43 @@ class VacanteFicha {
   @JsonKey(defaultValue: <Pregunta>[])
   final List<Pregunta> preguntas;
   final Conteos conteos;
+
+  /// La vacante se abrió en varias sucursales (14-oct). null = vacante suelta.
+  final GrupoVacante? grupo;
+}
+
+/// `grupo` de la ficha: el link del grupo y las vacantes hermanas, ya ordenadas por
+/// sucursal. Cada una vive por su cuenta (su ranking, sus contactos, su cierre).
+@JsonSerializable(createToJson: false)
+class GrupoVacante {
+  const GrupoVacante({this.slug, this.hermanas = const []});
+
+  factory GrupoVacante.fromJson(Map<String, dynamic> json) =>
+      _$GrupoVacanteFromJson(json);
+
+  final String? slug;
+  @JsonKey(defaultValue: <HermanaGrupo>[])
+  final List<HermanaGrupo> hermanas;
+}
+
+@JsonSerializable(createToJson: false)
+class HermanaGrupo {
+  const HermanaGrupo({
+    required this.estado,
+    this.slug,
+    this.sucursal,
+    this.esta = false,
+  });
+
+  factory HermanaGrupo.fromJson(Map<String, dynamic> json) =>
+      _$HermanaGrupoFromJson(json);
+
+  /// null = quien mira no puede abrirla (gerente de otra sucursal).
+  final String? slug;
+  final String? sucursal;
+  final String estado;
+
+  /// Es la vacante que se está viendo.
+  @JsonKey(defaultValue: false)
+  final bool esta;
 }

@@ -44,9 +44,4 @@ void main() {
     expect(indicadoresDe(i, 's1').velocidad, 9);
     expect(indicadoresDe(i, 'otra').velocidad, 1);
   });
-
-  test('la pestaña se llama Sucursales en multisucursal', () {
-    expect(nombrePestanaVacantes(variasSucursales: true), 'Sucursales');
-    expect(nombrePestanaVacantes(variasSucursales: false), 'Vacantes');
-  });
 }

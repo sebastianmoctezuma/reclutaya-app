@@ -88,4 +88,23 @@ VacanteFicha _$VacanteFichaFromJson(Map<String, dynamic> json) => VacanteFicha(
           ?.map((e) => Pregunta.fromJson(e as Map<String, dynamic>))
           .toList() ??
       [],
+  grupo: json['grupo'] == null
+      ? null
+      : GrupoVacante.fromJson(json['grupo'] as Map<String, dynamic>),
+);
+
+GrupoVacante _$GrupoVacanteFromJson(Map<String, dynamic> json) => GrupoVacante(
+  slug: json['slug'] as String?,
+  hermanas:
+      (json['hermanas'] as List<dynamic>?)
+          ?.map((e) => HermanaGrupo.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
+);
+
+HermanaGrupo _$HermanaGrupoFromJson(Map<String, dynamic> json) => HermanaGrupo(
+  estado: json['estado'] as String,
+  slug: json['slug'] as String?,
+  sucursal: json['sucursal'] as String?,
+  esta: json['esta'] as bool? ?? false,
 );

@@ -76,7 +76,3 @@ EmbudoInicio? embudoDe(Inicio i, String? sucursalId) {
   if (sucursalId == null) return p.total;
   return p.porSucursal?[sucursalId] ?? p.total;
 }
-
-/// Como en la web: con varias sucursales, «Vacantes» pasa a llamarse «Sucursales».
-String nombrePestanaVacantes({required bool variasSucursales}) =>
-    variasSucursales ? 'Sucursales' : 'Vacantes';

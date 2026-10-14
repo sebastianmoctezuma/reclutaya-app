@@ -12,6 +12,7 @@ import 'package:reclutaya_app/funciones/negocio/candidato/pantalla_candidato.dar
 import 'package:reclutaya_app/funciones/negocio/inicio/pantalla_inicio.dart';
 import 'package:reclutaya_app/funciones/negocio/novedades/avisos_core.dart';
 import 'package:reclutaya_app/funciones/negocio/novedades/pantalla_actividad.dart';
+import 'package:reclutaya_app/funciones/negocio/sucursales/pantalla_sucursales.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/pantalla_vacante.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/pantalla_vacantes.dart';
 import 'package:reclutaya_app/nucleo/rutas/guardas.dart';
@@ -79,10 +80,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/vacantes',
-                builder: (_, s) => PantallaVacantes(
-                  abrirSucursal: s.uri.queryParameters['sucursal'],
-                  visita: s.uri.queryParameters['t'],
-                ),
+                builder: (_, _) => const PantallaVacantes(),
                 routes: [
                   GoRoute(
                     path: ':slug',
@@ -113,6 +111,20 @@ final routerProvider = Provider<GoRouter>((ref) {
                     ],
                   ),
                 ],
+              ),
+            ],
+          ),
+          // «Sucursales» (14-oct): rama propia, como el menú de la web. Es pestaña solo
+          // con varias sucursales (`ramasVisibles`); el orden de las ramas lo fija
+          // `pestanas_core.dart`.
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/sucursales',
+                builder: (_, s) => PantallaSucursales(
+                  abrirSucursal: s.uri.queryParameters['sucursal'],
+                  visita: s.uri.queryParameters['t'],
+                ),
               ),
             ],
           ),

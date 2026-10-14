@@ -103,6 +103,103 @@ void main() {
     expect(find.text('Atender mesas en turno matutino.'), findsOneWidget);
   });
 
+  group('vacante en varias sucursales (14-oct)', () {
+    const enGrupo = VacanteFicha(
+      id: 'v1',
+      puesto: 'Mesero',
+      estado: 'ACTIVA',
+      slug: 'mesero-abc',
+      sucursal: 'Centro',
+      diasParaResponder: 3,
+      conteos: Conteos(
+        total: 0,
+        rankeados: 0,
+        sinRankear: 0,
+        cumplenRequisitos: 0,
+      ),
+      grupo: GrupoVacante(
+        slug: 'mesero-grp',
+        hermanas: [
+          HermanaGrupo(
+            slug: 'mesero-abc',
+            sucursal: 'Centro',
+            estado: 'ACTIVA',
+            esta: true,
+          ),
+          HermanaGrupo(
+            slug: 'mesero-def',
+            sucursal: 'Norte',
+            estado: 'CERRADA',
+          ),
+          HermanaGrupo(sucursal: 'Sur', estado: 'ACTIVA'),
+        ],
+      ),
+    );
+
+    testWidgets('«En N sucursales» va plegado y lista las hermanas', (
+      tester,
+    ) async {
+      comoTelefono(tester);
+      final r = RepositorioFalso()..vacanteR = const Exito(enGrupo);
+      await tester.pumpWidget(_app(r));
+      await tester.pumpAndSettle();
+      expect(find.text('Norte'), findsNothing);
+      await tester.tap(find.text('En 3 sucursales'));
+      await tester.pumpAndSettle();
+      expect(find.text('Esta'), findsOneWidget);
+      expect(find.text('Norte'), findsOneWidget);
+      expect(find.text('Cerrada'), findsOneWidget);
+      expect(find.text('Sur'), findsOneWidget);
+      // Solo se abre la que quien mira puede ver y no es esta.
+      expect(
+        find.bySemanticsLabel('Abrir la vacante de Norte'),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel('Abrir la vacante de Sur'), findsNothing);
+    });
+
+    testWidgets('una vacante suelta no lo muestra', (tester) async {
+      comoTelefono(tester);
+      await tester.pumpWidget(_app(RepositorioFalso()));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('sucursales'), findsNothing);
+    });
+
+    test('lee `grupo` del servidor; sin él, null', () {
+      final base = {
+        'id': 'v1',
+        'puesto': 'Mesero',
+        'estado': 'ACTIVA',
+        'slug': 'mesero-abc',
+        'diasParaResponder': 3,
+        'conteos': {
+          'total': 0,
+          'rankeados': 0,
+          'sinRankear': 0,
+          'cumplenRequisitos': 0,
+        },
+      };
+      expect(VacanteFicha.fromJson(base).grupo, isNull);
+      final v = VacanteFicha.fromJson({
+        ...base,
+        'grupo': {
+          'slug': 'mesero-grp',
+          'hermanas': [
+            {
+              'slug': null,
+              'sucursal': 'Norte',
+              'estado': 'ACTIVA',
+              'esta': false,
+            },
+          ],
+        },
+      });
+      expect(v.grupo!.slug, 'mesero-grp');
+      expect(v.grupo!.hermanas.single.slug, isNull);
+      expect(v.grupo!.hermanas.single.sucursal, 'Norte');
+    });
+  });
+
   testWidgets('con candidatos pero sin ranking, lo dice', (tester) async {
     comoTelefono(tester);
     final r = RepositorioFalso()
@@ -117,7 +214,7 @@ void main() {
     expect(find.text('Aún no hay ranking'), findsOneWidget);
   });
 
-  testWidgets('sin candidatos lo dice y no pide el ranking', (tester) async {
+  testWidgets('sin candidatos lo dice', (tester) async {
     comoTelefono(tester);
     final r = RepositorioFalso()
       ..vacanteR = const Exito(
@@ -144,7 +241,9 @@ void main() {
     );
     expect(find.text('Aún no hay candidatos'), findsOneWidget);
     expect(find.text('Cumplen requisitos'), findsNothing);
-    expect(r.llamadasRanking, 0);
+    // Llegó sin la lista (p. ej. por un aviso): el ranking sale junto con la ficha
+    // (14-oct), una sola vez, en vez de esperar a saber si hay candidatos.
+    expect(r.llamadasRanking, lessThanOrEqualTo(1));
   });
 
   testWidgets('si ya no existe, lo dice y ofrece Volver', (tester) async {

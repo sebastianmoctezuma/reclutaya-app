@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:reclutaya_app/funciones/negocio/comun/modelos/yo.dart';
 import 'package:reclutaya_app/funciones/negocio/comun/providers.dart';
 import 'package:reclutaya_app/funciones/negocio/vacantes/pantalla_vacantes.dart';
-import 'package:reclutaya_app/nucleo/red/errores_api.dart';
 import 'package:reclutaya_app/nucleo/tema/tema.dart';
 import 'package:reclutaya_app/nucleo/util/resultado.dart';
 
@@ -34,6 +32,25 @@ void main() {
     expect(find.text('14 candidatos'), findsOneWidget);
   });
 
+  testWidgets('apoyar el dedo en una vacante ya pide su ficha y su ranking', (
+    tester,
+  ) async {
+    comoTelefono(tester);
+    final r = RepositorioFalso();
+    await tester.pumpWidget(_app(r));
+    await tester.pumpAndSettle();
+    expect(r.llamadasVacante, 0);
+    final dedo = await tester.startGesture(
+      tester.getCenter(find.text(vacanteActiva.puesto)),
+    );
+    await tester.pump();
+    // Todavía sin soltar: ya salieron las dos peticiones.
+    expect(r.llamadasVacante, 1);
+    expect(r.llamadasRanking, 1);
+    await dedo.cancel();
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('al tocar Cerradas aparecen las cerradas', (tester) async {
     comoTelefono(tester);
     await tester.pumpWidget(_app(RepositorioFalso()));
@@ -52,106 +69,5 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Aún no tienes vacantes activas'), findsOneWidget);
     expect(find.textContaining('desde la web'), findsOneWidget);
-  });
-
-  group('con varias sucursales', () {
-    const yoMulti = Yo(
-      tipo: 'negocio',
-      nombre: 'Antonio',
-      iniciales: 'AP',
-      rol: 'owner',
-      veDinero: true,
-      variasSucursales: true,
-      empresa: EmpresaYo(nombre: 'Grupo Yaqui'),
-    );
-
-    Future<RepositorioFalso> abrir(WidgetTester tester) async {
-      comoTelefono(tester);
-      final r = RepositorioFalso()
-        ..yoR = const Exito(yoMulti)
-        ..sucursalesR = const Exito(sucursalesMulti);
-      await tester.pumpWidget(_app(r));
-      await tester.pumpAndSettle();
-      return r;
-    }
-
-    testWidgets('se llama Sucursales: tarjetas como en la web, sin acciones', (
-      tester,
-    ) async {
-      await abrir(tester);
-      expect(find.text('Sucursales'), findsWidgets);
-      expect(find.text('Yaqui Parrilla Sonorense'), findsOneWidget);
-      expect(find.text('Principal'), findsOneWidget);
-      expect(find.text('Privada Ninguno 447, Reynosa'), findsOneWidget);
-      expect(find.text('1 vacante · 1 miembro'), findsOneWidget);
-      expect(find.text('ST'), findsWidgets);
-      expect(find.text('Altomar'), findsOneWidget);
-      expect(find.text('Tu equipo'), findsOneWidget);
-      expect(find.text('2 personas'), findsOneWidget);
-      expect(find.text('2 candidatos nuevos esta semana'), findsOneWidget);
-      for (final accion in ['Crear sucursal', 'Invitar', 'Agregar sucursal']) {
-        expect(find.text(accion), findsNothing, reason: accion);
-      }
-    });
-
-    testWidgets(
-      'tocar una sucursal abre su ventana: números y vacantes, sin acciones',
-      (tester) async {
-        await abrir(tester);
-        await tester.tap(find.text('Altomar'));
-        await tester.pumpAndSettle();
-        expect(find.text('1 vacante en esta sucursal'), findsOneWidget);
-        expect(find.text('Nuevos esta semana'), findsOneWidget);
-        expect(find.text('Contactos usados'), findsOneWidget);
-        expect(find.text('Mesero'), findsOneWidget);
-        expect(find.text('2 nuevos esta semana'), findsOneWidget);
-        for (final accion in ['Crear vacante', 'Finalizar', 'Administrar']) {
-          expect(find.text(accion), findsNothing, reason: accion);
-        }
-      },
-    );
-
-    testWidgets('Ver equipo: el dueño y cada miembro con su rol', (
-      tester,
-    ) async {
-      await abrir(tester);
-      await tester.tap(find.text('Tu equipo'));
-      await tester.pumpAndSettle();
-      expect(find.text('Antonio Pimentel'), findsOneWidget);
-      expect(find.text('Dueño'), findsOneWidget);
-      expect(find.text('Miembro'), findsOneWidget);
-      expect(find.text('Invitar'), findsNothing);
-    });
-
-    testWidgets('el segmento Vacantes lista las activas', (tester) async {
-      await abrir(tester);
-      await tester.tap(find.text('Vacantes'));
-      await tester.pumpAndSettle();
-      expect(find.text(vacanteActiva.puesto), findsOneWidget);
-    });
-
-    testWidgets('con un servidor anterior cae a la lista de activas', (
-      tester,
-    ) async {
-      comoTelefono(tester);
-      final r = RepositorioFalso()
-        ..yoR = const Exito(yoMulti)
-        ..sucursalesR = const Falla(NoEncontrado());
-      await tester.pumpWidget(_app(r));
-      await tester.pumpAndSettle();
-      expect(find.text(vacanteActiva.puesto), findsOneWidget);
-    });
-
-    testWidgets('Cerradas sigue igual', (tester) async {
-      comoTelefono(tester);
-      final r = RepositorioFalso()
-        ..yoR = const Exito(yoMulti)
-        ..sucursalesR = const Exito(sucursalesMulti);
-      await tester.pumpWidget(_app(r));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Cerradas'));
-      await tester.pumpAndSettle();
-      expect(find.text('Yaqui Parrilla Sonorense'), findsNothing);
-    });
   });
 }
