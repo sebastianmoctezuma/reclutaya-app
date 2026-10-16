@@ -121,6 +121,10 @@ class PantallaActividad extends ConsumerWidget {
   'expediente_documento' => (Icons.folder_rounded, t.naranjaProfundo),
   'expediente_completo' => (Icons.folder_special_rounded, t.verdeProfundo),
   'entrevista_pronto' => (Icons.videocam_rounded, t.azul),
+  // 15-oct: el candidato contestó la invitación, y el contratado escribió en su hilo.
+  'entrevista_confirmada' => (Icons.event_available_rounded, t.verdeProfundo),
+  'entrevista_no_asistira' => (Icons.event_busy_rounded, t.naranjaProfundo),
+  'expediente_mensaje' => (Icons.chat_bubble_rounded, t.azul),
   _ => (Icons.person_add_alt_1_rounded, t.azul),
 };
 

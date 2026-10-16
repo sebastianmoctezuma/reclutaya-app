@@ -81,8 +81,7 @@ class _Activas extends ConsumerWidget {
             ? const SliverToBoxAdapter(
                 child: EstadoVacio(
                   titulo: 'Aún no tienes vacantes activas',
-                  texto:
-                      'Publícala desde la web y aquí la verás con su ranking.',
+                  texto: 'Cuando publiques una, aquí la verás con su ranking.',
                 ),
               )
             : SliverPadding(

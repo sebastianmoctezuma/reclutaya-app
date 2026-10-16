@@ -584,7 +584,7 @@ class _RankingState extends ConsumerState<_Ranking> {
                 titulo(''),
                 aviso(
                   'Aún no hay ranking',
-                  'Genera el ranking desde la web y aquí verás a los candidatos ordenados.',
+                  'La inteligencia artificial los ordena sola en unos minutos; vuelve a abrir la vacante para verlos.',
                 ),
               ];
             }

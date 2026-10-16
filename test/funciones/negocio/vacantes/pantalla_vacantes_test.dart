@@ -62,12 +62,12 @@ void main() {
     expect(find.text(vacanteActiva.puesto), findsNothing);
   });
 
-  testWidgets('sin activas: vacío con salida a la web', (tester) async {
+  testWidgets('sin activas: vacío que dice qué verá', (tester) async {
     comoTelefono(tester);
     final r = RepositorioFalso()..activasR = const Exito([]);
     await tester.pumpWidget(_app(r));
     await tester.pumpAndSettle();
     expect(find.text('Aún no tienes vacantes activas'), findsOneWidget);
-    expect(find.textContaining('desde la web'), findsOneWidget);
+    expect(find.textContaining('Cuando publiques una'), findsOneWidget);
   });
 }

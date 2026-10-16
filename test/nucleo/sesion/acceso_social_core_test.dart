@@ -24,9 +24,14 @@ void main() {
   test(
     'sin cuenta: el mensaje dice qué hacer, y con Apple explica el correo',
     () {
+      // Sin mandar a crear nada fuera de la app (revisión de Apple, 15-oct).
       expect(
         mensajeSinCuenta(ProveedorSocial.google),
-        contains('reclutaya.com'),
+        contains('Entra con el correo de tu cuenta'),
+      );
+      expect(
+        mensajeSinCuenta(ProveedorSocial.google),
+        isNot(contains('reclutaya.com')),
       );
       expect(
         mensajeSinCuenta(ProveedorSocial.apple),

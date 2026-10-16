@@ -63,8 +63,7 @@ class _PantallaSucursalesState extends ConsumerState<PantallaSucursales> {
           alternativa: SliverToBoxAdapter(
             child: EstadoVacio(
               titulo: 'Aún no hay sucursales',
-              texto:
-                  'Agrégalas desde la web y aquí las verás con sus vacantes.',
+              texto: 'Cuando tu negocio tenga sucursales, aquí las verás con sus vacantes.',
             ),
           ),
         ),

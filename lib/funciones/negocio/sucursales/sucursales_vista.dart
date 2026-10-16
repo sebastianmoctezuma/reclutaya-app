@@ -477,10 +477,7 @@ class _HojaEquipo extends StatelessWidget {
             ],
           ),
         ),
-        Text(
-          'Quién opera cada sucursal. Las invitaciones y los cambios se hacen desde la web.',
-          style: tt.bodySmall,
-        ),
+        Text('Quién opera cada sucursal y con qué rol.', style: tt.bodySmall),
         const SizedBox(height: 14),
         DecoratedBox(
           decoration: BoxDecoration(

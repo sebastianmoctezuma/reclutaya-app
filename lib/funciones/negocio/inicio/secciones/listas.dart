@@ -404,7 +404,7 @@ class VacantesEnCurso extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                'Publica tu primera vacante desde la web y aquí verás a tus candidatos.',
+                'Cuando publiques tu primera vacante, aquí verás a tus candidatos.',
                 style: tt.bodyMedium,
               ),
             ),

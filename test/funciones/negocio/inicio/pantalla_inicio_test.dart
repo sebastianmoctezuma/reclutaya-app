@@ -174,7 +174,7 @@ void main() {
     expect(find.text('Vacantes abiertas'), findsOneWidget);
   });
 
-  testWidgets('sin vacantes activas invita a publicar desde la web', (
+  testWidgets('sin vacantes activas dice qué verá cuando publique', (
     tester,
   ) async {
     comoTelefono(tester);
@@ -183,9 +183,12 @@ void main() {
     await tester.pumpAndSettle();
     await _bajarHasta(
       tester,
-      find.textContaining('Publica tu primera vacante'),
+      find.textContaining('Cuando publiques tu primera vacante'),
     );
-    expect(find.textContaining('Publica tu primera vacante'), findsOneWidget);
+    expect(
+      find.textContaining('Cuando publiques tu primera vacante'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('el encabezado muestra el negocio, sin saludo', (tester) async {

@@ -27,7 +27,7 @@ String nonceParaProveedor(String crudo) =>
 String mensajeSinCuenta(ProveedorSocial p) => switch (p) {
   ProveedorSocial.google =>
     'Esa cuenta de Google no tiene un negocio en ReclutaYa. '
-        'Créalo en reclutaya.com o entra con el correo de tu cuenta.',
+        'Entra con el correo de tu cuenta.',
   ProveedorSocial.apple =>
     'No encontramos un negocio con ese correo. Para entrar con Apple, elige '
         '«Compartir mi correo» y usa el mismo de tu cuenta de ReclutaYa. Si antes lo '
